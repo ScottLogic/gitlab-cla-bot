@@ -133,12 +133,20 @@ const Handler = async webhook =>
     if(unresolvedLoginNames.length > 0) {
       const unidentifiedString = unresolvedLoginNames.join(", ");
       logger.info(`Some commits from the following contributors are not signed with a valid email address: ${unidentifiedString}. `);
-      await SendTokenisedComment(botConfig.messageMissingEmail, unidentifiedString);
+      await SendTokenisedComment(botConfig.messageMissingEmail, { unidentifiedUsers: unidentifiedString });
 
       message = removeLabelAndSetFailureStatus(unidentifiedString);
     } else {
+
+      let usersToVerify = [];
+
+      commits.forEach(c => {
+        usersToVerify.push({ email : c.author_email, login : c.author_name });
+      });
+
+      const distinctUsersToVerify = sortUnique(usersToVerify);
       const verifier = contributionVerifier(botConfig);
-      const nonContributors = await verifier(commits, token);
+      const nonContributors = await verifier(distinctUsersToVerify, token);
 
       if(nonContributors.length === 0) {
         logger.info("All contributors have a signed CLA, adding success status to the pull request and a label");
@@ -149,12 +157,12 @@ const Handler = async webhook =>
 
         message = `added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
-        const usersWithoutCla = sortUnique(nonContributors).map(contributorId => `@${contributorId}`).join(", ");
+        const usersWithoutCLA = sortUnique(nonContributors).map(contributorId => `@${contributorId}`).join(", ");
 
         logger.info(`The contributors ${usersWithoutCLA} have not signed the CLA`);
-        await SendTokenisedComment(botConfig.message, usersWithoutCla);
+        await SendTokenisedComment(botConfig.message, {usersWithoutCLA: usersWithoutCLA});
 
-        message = removeLabelAndSetFailureStatus(usersWithoutCla);
+        message = removeLabelAndSetFailureStatus(usersWithoutCLA);
     }
   }
 

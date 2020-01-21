@@ -12,7 +12,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\index.js",
-            "args": ["<ENTER-API-PLK>", "<ENTER-REPO-PLK>"]
+            "args": ["<ENTER-API-LICENSE-KEY>", "<ENTER-REPO-LICENSE-KEY>"]
         }
     ]
 }
