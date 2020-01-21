@@ -39,8 +39,9 @@ const sortUnique = arr => arr.sort((a, b) => a - b).filter((value, index, self) 
 
 const defaultConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, "default.json")));
 
-// TODO : Add support for MR actions not just merge request notes.
+// At the moment we're only accepting triggers from merge requests (updates or notes added)
 const validAction = webhook =>
+  webhook.object_kind === "merge_request" ||
   (webhook.object_kind === "note" &&  webhook.object_attributes.noteable_type == "MergeRequest");
 
 const applyToken = token => {
@@ -53,12 +54,18 @@ const applyToken = token => {
     return api;
   };
 
-const gitLabInfo = webhook => {
-  return {
+const gitLabInfo = webhook => 
+  webhook.object_kind === "note"
+    ? {
         projectId: webhook.project.id,
         mergeRequestId: webhook.merge_request.iid,
         projectUrl: webhook.project.web_url
-  }};
+      }
+    : {
+        projectId: webhook.project.id,
+        mergeRequestId: webhook.object_attributes.iid,
+        projectUrl: webhook.project.web_url
+      };
 
 const obtainToken = webhook => gitlabToken
 
