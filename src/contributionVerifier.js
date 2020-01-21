@@ -46,7 +46,29 @@ const contributorArrayVerifier = contributors => committers => {
   return Promise.resolve(res);
 };
 
-// TODO : Reimplement all other existing verifiers
+const configFileFromUrlVerifier = contributorListUrl => committers =>
+  requestp({
+    url: contributorListUrl,
+    json: true
+  }).then(contributors => contributorArrayVerifier(contributors)(committers));
+
+const webhookVerifier = webhookUrl => committers =>
+  Promise.all(
+    committers.map(committer =>
+      requestp({
+        url: webhookUrl + committer.login,
+        json: true
+      }).then(response => ({
+        username: committer.login,
+        isContributor: response.isContributor
+      }))
+    )
+  ).then(responses => {
+    const contributors = responses
+      .filter(r => r.isContributor)
+      .map(r => r.username);
+    return contributorArrayVerifier(contributors)(committers);
+  });
 
 module.exports = config => {
   const configCopy = Object.assign({}, config);
@@ -55,6 +77,16 @@ module.exports = config => {
     if (is.array(configCopy.contributors)) {
       logger.info("Checking contributors against the list supplied in the .clabot file")
       return contributorArrayVerifier(configCopy.contributors);
+    } 
+    else if (is.url(configCopy.contributors) && configCopy.contributors.indexOf("?") !== -1) 
+    {
+      logger.info("Checking contributors against the webhook supplied in the .clabot file");
+      return webhookVerifier(configCopy.contributors);
+    } 
+    else if (is.url(configCopy.contributors)) 
+    {
+      logger.info("Checking contributors against the URL supplied in the .clabot file");
+      return configFileFromUrlVerifier(configCopy.contributors);
     }
   }
   throw new Error("A mechanism for verifying contributors has not been specified");
