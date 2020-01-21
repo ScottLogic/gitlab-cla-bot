@@ -121,7 +121,7 @@ const Handler = async webhook =>
     logger.info(`Total Commits: ${commits.length}, checking CLA status for committers`);
 
     const unresolvedLoginNames = sortUnique(
-      commits.filter(c => c.author_email == null).map(c => c.committer_name)
+      commits.filter(c => c.author_email == null).map(c => c.author_name)
     );
 
     // TODO : Investigate org level .clabot file. Also, does the github version search for files as opposed to knowing where they are stored?
@@ -162,7 +162,7 @@ const Handler = async webhook =>
       }
     }
 
-    const removeLabelAndSetFailureStatus = async users => {
+    const removeLabelAndUnapprove = async users => {
       await removeBotLabel();
       if(approversPossible)
       {
@@ -177,7 +177,7 @@ const Handler = async webhook =>
       logger.info(`Some commits from the following contributors are not signed with a valid email address: ${unidentifiedString}. `);
       await SendTokenisedComment(botConfig.messageMissingEmail, { unidentifiedUsers: unidentifiedString });
 
-      message = removeLabelAndSetFailureStatus(unidentifiedString);
+      message = removeLabelAndUnapprove(unidentifiedString);
     } else {
 
       let usersToVerify = [];
@@ -200,12 +200,12 @@ const Handler = async webhook =>
 
         message = `added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
-        const usersWithoutCLA = sortUnique(nonContributors).map(contributorId => `@${contributorId}`).join(", ");
+        const usersWithoutCLA = sortUnique(nonContributors).join(", ");
 
         logger.info(`The contributors ${usersWithoutCLA} have not signed the CLA`);
         await SendTokenisedComment(botConfig.message, {usersWithoutCLA: usersWithoutCLA});
 
-        message = removeLabelAndSetFailureStatus(usersWithoutCLA);
+        message = removeLabelAndUnapprove(usersWithoutCLA);
     }
   }
 
