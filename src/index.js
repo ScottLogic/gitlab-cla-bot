@@ -13,6 +13,7 @@ const port = 3000
 const gitlabToken = process.argv[2];
 const gitlabRepoToken = process.argv[3];
 const botName = "gitlab-cla-bot";
+const approversPossible = false;
 
 app.use(express.json())
 
@@ -81,7 +82,13 @@ const Handler = async webhook =>
     const token = obtainToken(webhook);
     const {
         getCommits,
-        addComment
+        addComment,
+        getMergeRequest,
+        approveMergeRequest,
+        unapproveMergeRequest,
+        getProjectLabels,
+        createProjectLabel,
+        updateMergeRequestLabels
       } = applyToken(token);
       
     const {
@@ -98,6 +105,9 @@ const Handler = async webhook =>
       await addComment(projectId, mergeRequestId, msg)
     }
 
+    const MRInfo = await getMergeRequest(projectId, mergeRequestId);
+    const headSha = MRInfo.sha;
+    
     logger.info("Obtaining the list of commits for the pull request");
     const commits = await getCommits(projectId, mergeRequestId);
   
@@ -107,25 +117,50 @@ const Handler = async webhook =>
       commits.filter(c => c.author_email == null).map(c => c.committer_name)
     );
 
-    // TODO : Get the SHA if we're planning on approving
-
     // TODO : Investigate org level .clabot file. Also, does the github version search for files as opposed to knowing where they are stored?
     let claConfig = await getProjectClaFile(projectId);
     if (!is.json(claConfig)) {
       logger.error("The .clabot file is not valid JSON");
-      // TODO : Work out how we 'set the status' in gitlab
-      // await setStatus(webhook, headSha, "error", logFile);
+      if(approversPossible)
+      {
+        await unapproveMergeRequest(projectId, mergeRequestId);
+      }
       throw new Error("The .clabot file is not valid JSON");
     }
 
     const botConfig = Object.assign({}, defaultConfig, claConfig);
     
-    const removeLabelAndSetFailureStatus = async users => {
-      // TODO : Work out how to add and delete labels to gitlab MR's
-      //await deleteLabel(issueUrl, botConfig.label);
+    // Ensure the label exists on the project (maybe extend to groups at a later date)
+    var existingLabels = await getProjectLabels(projectId, botConfig.label);
+    if(existingLabels.find(l => l.name === botConfig.label) === undefined) {
+      await createProjectLabel(projectId, botConfig.label)
+    }
 
-      // TODO : Work out how we 'set the status' in gitlab
-      //await setStatus(webhook, headSha, "error", logFile);
+    const addBotLabel = async () => {
+      let labels = MRInfo.labels;
+      if(!labels.includes(botConfig.label))
+      {
+        labels.push(botConfig.label)
+        await updateMergeRequestLabels(projectId, mergeRequestId, labels)
+      }
+    }
+
+    const removeBotLabel = async () => {
+      let labels = MRInfo.labels;
+      const existingIdx = labels.indexOf(botConfig.label);
+      if(existingIdx >= 0)
+      {
+        labels.splice(existingIdx, 1)
+        await updateMergeRequestLabels(projectId, mergeRequestId, labels)
+      }
+    }
+
+    const removeLabelAndSetFailureStatus = async users => {
+      await removeBotLabel();
+      if(approversPossible)
+      {
+        await unapproveMergeRequest(projectId, mergeRequestId);
+      }
       return `CLA has not been signed by users ${users}, added a comment to ${mergeRequestUrl}`;
     };
 
@@ -150,10 +185,11 @@ const Handler = async webhook =>
 
       if(nonContributors.length === 0) {
         logger.info("All contributors have a signed CLA, adding success status to the pull request and a label");
-        // TODO : Add the label if it doesn't exist (also, can they be added twice?)
-
-        // TODO : Work out how we 'set the status' in gitlab
-        // await setStatus(webhook, headSha, "success", logFile);
+        await addBotLabel();
+        if(approversPossible)
+        {
+          await approveMergeRequest(projectId, mergeRequestId, headSha);
+        }
 
         message = `added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
