@@ -11,7 +11,6 @@ const contributionVerifier = require("./contributionVerifier");
 const app = express()
 const port = 3000
 const gitlabToken = process.argv[2];
-const gitlabRepoToken = process.argv[3];
 const botName = "gitlab-cla-bot";
 const approversPossible = false;
 
@@ -91,16 +90,13 @@ const Handler = async webhook =>
         getCommits,
         addComment,
         getMergeRequest,
+        getProjectClaFile,
         approveMergeRequest,
         unapproveMergeRequest,
         getProjectLabels,
         createProjectLabel,
         updateMergeRequestLabels
       } = applyToken(token);
-      
-    const {
-      getProjectClaFile
-    } = applyToken(gitlabRepoToken);
 
     const { projectId: projectId, mergeRequestId: mergeRequestId, projectUrl: projectUrl } = gitLabInfo(webhook);
     const mergeRequestUrl = `${projectUrl}/merge_requests/${mergeRequestId}`;
