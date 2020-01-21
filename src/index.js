@@ -4,24 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const gitlabApi = require("./gitlabApi");
 
-const app = express()
-const port = 3000
-const gitlabToken = process.argv[2];
+// TODO: replace with OAuth? Use hardcoded version for testing in lambda
+const gitlabToken = "YOUR_TOKEN_HERE"; //process.argv[2];
 const botName = "gitlab-cla-bot";
 
-app.use(express.json())
-
-app.get('/', (req, res) => res.end('Please send a post request'))
-
-app.post('/', async function (req, res) {
-    var body = req.body;
-    var msg = await Handler(body)
-    res.send(msg)
-  })
-
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
-
-/*******/
 const defaultConfig = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, "default.json"))
   );
@@ -49,15 +35,22 @@ const obtainToken = webhook => gitlabToken
 
 const commentSummonsBot = comment => comment.match(new RegExp(`@${botName}(\\[bot\\])?\\s*check`)) !== null;
 
-const Handler = async webhook => 
+function buildResponse(statusCode, responseBody) {
+  return {
+       statusCode: statusCode,
+       body: responseBody,
+   };
+}
+
+exports.handler = async webhook => 
 {
     if (!validAction(webhook)) {
-        return `ignored action of type ${webhook.object_kind}`;
+        return buildResponse(400, `ignored action of type ${webhook.object_kind}`);
     }
 
     if (webhook.object_kind === "note" && webhook.object_attributes.noteable_type == "MergeRequest") {
         if (!commentSummonsBot(webhook.object_attributes.note)) {
-            return "the comment didn\'t summon the cla-bot";
+            return buildResponse(200, "the comment didn\'t summon the cla-bot");
         }
     }
 
@@ -74,5 +67,5 @@ const Handler = async webhook =>
     console.log("Adding recheck comment")
     await addRecheckComment(projectId, mergeRequestId, botConfig.recheckComment);
 
-    return "Added new comment in response to webhook";
+    return buildResponse(200, "Added new comment in response to webhook");
 }
