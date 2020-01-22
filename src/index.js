@@ -5,7 +5,7 @@ const path = require("path");
 const gitlabApi = require("./gitlabApi");
 
 // TODO: replace with OAuth? Use hardcoded version for testing in lambda
-const gitlabToken = "YOUR_TOKEN_HERE"; //process.argv[2];
+const gitlabToken = process.argv[2];
 const botName = "gitlab-cla-bot";
 
 const defaultConfig = JSON.parse(
@@ -42,8 +42,9 @@ function buildResponse(statusCode, responseBody) {
    };
 }
 
-exports.handler = async webhook => 
+exports.handler = async request => 
 {
+    let webhook = JSON.parse(request.body);
     if (!validAction(webhook)) {
         return buildResponse(400, `ignored action of type ${webhook.object_kind}`);
     }
