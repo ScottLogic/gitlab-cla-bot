@@ -1,0 +1,62 @@
+{
+  version: 2,
+  path: '/default/cla-bot-dev',
+  httpMethod: 'POST',
+  headers: {
+    'Content-Length': '4095',
+    'Content-Type': 'application/json',
+    Host: '3uggl19w7b.execute-api.us-east-2.amazonaws.com',
+    'X-Amzn-Trace-Id': 'Root=1-5e287325-a0db7950a934d3a01530e180',
+    'X-Forwarded-For': '35.231.90.130',
+    'X-Forwarded-Port': '443',
+    'X-Forwarded-Proto': 'https',
+    'X-Gitlab-Event': 'Note Hook'
+  },
+  multiValueHeaders: {
+    'Content-Length': [ '4095' ],
+    'Content-Type': [ 'application/json' ],
+    Host: [ '3uggl19w7b.execute-api.us-east-2.amazonaws.com' ],
+    'X-Amzn-Trace-Id': [ 'Root=1-5e287325-a0db7950a934d3a01530e180' ],
+    'X-Forwarded-For': [ '35.231.90.130' ],
+    'X-Forwarded-Port': [ '443' ],
+    'X-Forwarded-Proto': [ 'https' ],
+    'X-Gitlab-Event': [ 'Note Hook' ]
+  },
+  queryStringParameters: null,
+  multiValueQueryStringParameters: null,
+  requestContext: {
+    accountId: '940354998102',
+    apiId: '3uggl19w7b',
+    authorizer: { claims: null, scopes: null },
+    domainName: '3uggl19w7b.execute-api.us-east-2.amazonaws.com',
+    domainPrefix: '3uggl19w7b',
+    extendedRequestId: 'Gtbt3g1UIAMEAAQ=',
+    httpMethod: 'POST',
+    identity: {
+      accessKey: null,
+      accountId: null,
+      caller: null,
+      cognitoAuthenticationProvider: null,
+      cognitoAuthenticationType: null,
+      cognitoIdentityId: null,
+      cognitoIdentityPoolId: null,
+      principalOrgId: null,
+      sourceIp: '35.231.90.130',
+      user: null,
+      userAgent: '',
+      userArn: null
+    },
+    path: '/default/cla-bot-dev',
+    protocol: 'HTTP/1.1',
+    requestId: 'Gtbt3g1UIAMEAAQ=',
+    requestTime: '22/Jan/2020:16:07:01 +0000',
+    requestTimeEpoch: 1579709221487,
+    resourceId: null,
+    resourcePath: '/cla-bot-dev',
+    stage: 'default'
+  },
+  pathParameters: null,
+  stageVariables: null,
+  body: `{"object_kind":"note","event_type":"note","user":{"name":"Sarah Haswell","username":"shaswell","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/user/avatar/5266379/avatar.png"},"project_id":16330673,"project":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"object_attributes":{"attachment":null,"author_id":5266379,"change_position":null,"commit_id":null,"created_at":"2020-01-22 16:07:01 UTC","discussion_id":"e99bfd0895c66620ae7d10dc9207b0ec58c09976","id":275445049,"line_code":null,"note":"Oh look, it's a comment","noteable_id":47828718,"noteable_type":"MergeRequest","original_position":null,"position":null,"project_id":16330673,"resolved_at":null,"resolved_by_id":null,"resolved_by_push":null,"st_diff":null,"system":false,"type":null,"updated_at":"2020-01-22 16:07:01 UTC","updated_by_id":null,"description":"Oh look, it's a comment","url":"https://gitlab.com/strangerich/testproject/merge_requests/3#note_275445049"},"repository":{"name":"testProject","url":"git@gitlab.com:strangerich/testproject.git","description":"","homepage":"https://gitlab.com/strangerich/testproject"},"merge_request":{"assignee_id":null,"author_id":5266379,"created_at":"2020-01-22 10:25:04 UTC","description":"","head_pipeline_id":null,"id":47828718,"iid":3,"last_edited_at":null,"last_edited_by_id":null,"merge_commit_sha":null,"merge_error":null,"merge_params":{"force_remove_source_branch":"1"},"merge_status":"can_be_merged","merge_user_id":null,"merge_when_pipeline_succeeds":false,"milestone_id":null,"source_branch":"anotherBranch","source_project_id":16330673,"state_id":1,"target_branch":"master","target_project_id":16330673,"time_estimate":0,"title":"Add a file","updated_at":"2020-01-22 16:07:01 UTC","updated_by_id":5266379,"url":"https://gitlab.com/strangerich/testproject/merge_requests/3","source":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"target":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"last_commit":{"id":"7a43971cf9ca1e22e010c4519601e81116abdd84","message":"Add another line\\n","timestamp":"2020-01-22T16:01:47+00:00","url":"https://gitlab.com/strangerich/testproject/commit/7a43971cf9ca1e22e010c4519601e81116abdd84","author":{"name":"Sarah Haswell","email":"48217891+sehaswell@users.noreply.github.com"}},"work_in_progress":false,"total_time_spent":0,"human_total_time_spent":null,"human_time_estimate":null,"assignee_ids":[],"state":"opened"}}`,
+  isBase64Encoded: false
+}

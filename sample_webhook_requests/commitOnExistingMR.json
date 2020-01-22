@@ -1,0 +1,62 @@
+{
+  version: 2,
+  path: '/default/cla-bot-dev',
+  httpMethod: 'POST',
+  headers: {
+    'Content-Length': '4058',
+    'Content-Type': 'application/json',
+    Host: '3uggl19w7b.execute-api.us-east-2.amazonaws.com',
+    'X-Amzn-Trace-Id': 'Root=1-5e2871a1-09f4ebf4fba99ebc7277fc5c',
+    'X-Forwarded-For': '34.74.188.180',
+    'X-Forwarded-Port': '443',
+    'X-Forwarded-Proto': 'https',
+    'X-Gitlab-Event': 'Merge Request Hook'
+  },
+  multiValueHeaders: {
+    'Content-Length': [ '4058' ],
+    'Content-Type': [ 'application/json' ],
+    Host: [ '3uggl19w7b.execute-api.us-east-2.amazonaws.com' ],
+    'X-Amzn-Trace-Id': [ 'Root=1-5e2871a1-09f4ebf4fba99ebc7277fc5c' ],
+    'X-Forwarded-For': [ '34.74.188.180' ],
+    'X-Forwarded-Port': [ '443' ],
+    'X-Forwarded-Proto': [ 'https' ],
+    'X-Gitlab-Event': [ 'Merge Request Hook' ]
+  },
+  queryStringParameters: null,
+  multiValueQueryStringParameters: null,
+  requestContext: {
+    accountId: '940354998102',
+    apiId: '3uggl19w7b',
+    authorizer: { claims: null, scopes: null },
+    domainName: '3uggl19w7b.execute-api.us-east-2.amazonaws.com',
+    domainPrefix: '3uggl19w7b',
+    extendedRequestId: 'GtaxTh6MoAMEAAQ=',
+    httpMethod: 'POST',
+    identity: {
+      accessKey: null,
+      accountId: null,
+      caller: null,
+      cognitoAuthenticationProvider: null,
+      cognitoAuthenticationType: null,
+      cognitoIdentityId: null,
+      cognitoIdentityPoolId: null,
+      principalOrgId: null,
+      sourceIp: '34.74.188.180',
+      user: null,
+      userAgent: '',
+      userArn: null
+    },
+    path: '/default/cla-bot-dev',
+    protocol: 'HTTP/1.1',
+    requestId: 'GtaxTh6MoAMEAAQ=',
+    requestTime: '22/Jan/2020:16:00:33 +0000',
+    requestTimeEpoch: 1579708833865,
+    resourceId: null,
+    resourcePath: '/cla-bot-dev',
+    stage: 'default'
+  },
+  pathParameters: null,
+  stageVariables: null,
+  body: '{"object_kind":"merge_request","event_type":"merge_request","user":{"name":"Sarah Haswell","username":"shaswell","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/user/avatar/5266379/avatar.png"},"project":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"object_attributes":{"assignee_id":null,"author_id":5266379,"created_at":"2020-01-22 10:25:04 UTC","description":"","head_pipeline_id":null,"id":47828718,"iid":3,"last_edited_at":null,"last_edited_by_id":null,"merge_commit_sha":null,"merge_error":null,"merge_params":{"force_remove_source_branch":"1"},"merge_status":"unchecked","merge_user_id":null,"merge_when_pipeline_succeeds":false,"milestone_id":null,"source_branch":"anotherBranch","source_project_id":16330673,"state_id":1,"target_branch":"master","target_project_id":16330673,"time_estimate":0,"title":"Add a file","updated_at":"2020-01-22 16:00:33 UTC","updated_by_id":5266379,"url":"https://gitlab.com/strangerich/testproject/merge_requests/3","source":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"target":{"id":16330673,"name":"testProject","description":"","web_url":"https://gitlab.com/strangerich/testproject","avatar_url":null,"git_ssh_url":"git@gitlab.com:strangerich/testproject.git","git_http_url":"https://gitlab.com/strangerich/testproject.git","namespace":"Richard Strange","visibility_level":0,"path_with_namespace":"strangerich/testproject","default_branch":"master","ci_config_path":null,"homepage":"https://gitlab.com/strangerich/testproject","url":"git@gitlab.com:strangerich/testproject.git","ssh_url":"git@gitlab.com:strangerich/testproject.git","http_url":"https://gitlab.com/strangerich/testproject.git"},"last_commit":{"id":"7a43971cf9ca1e22e010c4519601e81116abdd84","message":"Add another line\\n","timestamp":"2020-01-22T16:01:47+00:00","url":"https://gitlab.com/strangerich/testproject/commit/7a43971cf9ca1e22e010c4519601e81116abdd84","author":{"name":"Sarah Haswell","email":"48217891+sehaswell@users.noreply.github.com"}},"work_in_progress":false,"total_time_spent":0,"human_total_time_spent":null,"human_time_estimate":null,"assignee_ids":[],"state":"opened","action":"update","oldrev":"43e5ad6523df5c76e132098bf0f1dcaa511d09ea"},"labels":[{"id":13607041,"title":"pink label","color":"#D10069","project_id":16330673,"created_at":"2020-01-22 10:37:14 UTC","updated_at":"2020-01-22 10:37:14 UTC","template":false,"description":null,"type":"ProjectLabel","group_id":null}],"changes":{"labels":{"previous":[],"current":[{"id":13607041,"title":"pink label","color":"#D10069","project_id":16330673,"created_at":"2020-01-22 10:37:14 UTC","updated_at":"2020-01-22 10:37:14 UTC","template":false,"description":null,"type":"ProjectLabel","group_id":null}]},"total_time_spent":{"previous":null,"current":0}},"repository":{"name":"testProject","url":"git@gitlab.com:strangerich/testproject.git","description":"","homepage":"https://gitlab.com/strangerich/testproject"}}',
+  isBase64Encoded: false
+}
