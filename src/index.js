@@ -7,12 +7,12 @@ const handlebars = require("handlebars");
 const gitlabApi = require("./gitlabApi");
 const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
+const getCommiterInfo = require("./committerFinder")
 
 const app = express()
 const port = 3000
 const gitlabToken = process.argv[2];
 const botName = "gitlab-cla-bot";
-const approversPossible = false;
 
 app.use(express.json())
 
@@ -87,12 +87,10 @@ const Handler = async webhook =>
 
     const token = obtainToken(webhook);
     const {
-        getCommits,
         addComment,
         getMergeRequest,
         getProjectClaFile,
-        approveMergeRequest,
-        unapproveMergeRequest,
+        setCommitStatus,
         getProjectLabels,
         createProjectLabel,
         updateMergeRequestLabels
@@ -110,24 +108,12 @@ const Handler = async webhook =>
 
     const MRInfo = await getMergeRequest(projectId, mergeRequestId);
     const headSha = MRInfo.sha;
-    
-    logger.info("Obtaining the list of commits for the pull request");
-    const commits = await getCommits(projectId, mergeRequestId);
   
-    logger.info(`Total Commits: ${commits.length}, checking CLA status for committers`);
-
-    const unresolvedLoginNames = sortUnique(
-      commits.filter(c => c.author_email == null).map(c => c.author_name)
-    );
-
     // TODO : Investigate org level .clabot file. Also, does the github version search for files as opposed to knowing where they are stored?
     let claConfig = await getProjectClaFile(projectId);
     if (!is.json(claConfig)) {
       logger.error("The .clabot file is not valid JSON");
-      if(approversPossible)
-      {
-        await unapproveMergeRequest(projectId, mergeRequestId);
-      }
+      await setCommitStatus(projectId, headSha, "failed", botName)
       throw new Error("The .clabot file is not valid JSON");
     }
 
@@ -160,43 +146,37 @@ const Handler = async webhook =>
 
     const removeLabelAndUnapprove = async users => {
       await removeBotLabel();
-      if(approversPossible)
-      {
-        await unapproveMergeRequest(projectId, mergeRequestId);
-      }
+      await setCommitStatus(projectId, headSha, "failed", botName)
       return `CLA has not been signed by users ${users}, added a comment to ${mergeRequestUrl}`;
     };
+    
+    const commiterInfo = await getCommiterInfo(projectId, mergeRequestId, gitlabToken);
 
     let message;
-    if(unresolvedLoginNames.length > 0) {
-      const unidentifiedString = unresolvedLoginNames.join(", ");
+    if(commiterInfo.unresolvedLoginNames.length > 0) {
+      const unidentifiedString = commiterInfo.unresolvedLoginNames.join(", ");
       logger.info(`Some commits from the following contributors are not signed with a valid email address: ${unidentifiedString}. `);
       await SendTokenisedComment(botConfig.messageMissingEmail, { unidentifiedUsers: unidentifiedString });
 
       message = removeLabelAndUnapprove(unidentifiedString);
+    } else if(commiterInfo.unknownParticipants.length > 0) {
+      const unidentifiedString = commiterInfo.unknownParticipants.join(", ");
+      logger.info(`Some commits were authored by the following users who are not participants: ${unidentifiedString}. `);
+      await SendTokenisedComment(botConfig.messageMissingParticipants, { unidentifiedUsers: unidentifiedString });
+
+      message = removeLabelAndUnapprove(unidentifiedString);
     } else {
-
-      let usersToVerify = [];
-
-      commits.forEach(c => {
-        usersToVerify.push({ email : c.author_email, login : c.author_name });
-      });
-
-      const distinctUsersToVerify = sortUnique(usersToVerify);
       const verifier = contributionVerifier(botConfig);
-      const nonContributors = await verifier(distinctUsersToVerify, token);
+      const nonContributors = await verifier(commiterInfo.distinctUsersToVerify, token);
 
       if(nonContributors.length === 0) {
-        logger.info("All contributors have a signed CLA, adding success status to the pull request and a label");
+        logger.info("All contributors have a signed CLA, adding success status to the commit and a label");
         await addBotLabel();
-        if(approversPossible)
-        {
-          await approveMergeRequest(projectId, mergeRequestId, headSha);
-        }
+        await setCommitStatus(projectId, headSha, "success", botName);
 
-        message = `added label ${botConfig.label} to ${mergeRequestUrl}`;
+        message = `Updated commit status and added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
-        const usersWithoutCLA = sortUnique(nonContributors).join(", ");
+        const usersWithoutCLA = sortUnique(nonContributors).map(login => `@${login}`).join(", ");
 
         logger.info(`The contributors ${usersWithoutCLA} have not signed the CLA`);
         await SendTokenisedComment(botConfig.message, {usersWithoutCLA: usersWithoutCLA});

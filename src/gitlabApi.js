@@ -22,6 +22,11 @@ exports.gitlabRequest = (opts, token, method = "POST") =>
     method: "GET"
   });
 
+  exports.getParticipants = (projectId, mergeRequestId) => ({
+    url: `https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/participants`,
+    method: "GET"
+  });
+
   exports.getProjectClaFile = (projectId) => ({
     // TODO : Assumes master branch, which is probably not acceptable
     url: `https://gitlab.com/api/v4/projects/${projectId}/repository/files/%2Eclabot/raw?ref=master`,
@@ -40,15 +45,12 @@ exports.gitlabRequest = (opts, token, method = "POST") =>
     method: "GET"
   });
   
-  exports.approveMergeRequest = (projectId, mergeRequestId, sha) => ({
-    url: `https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/approve`,
+  exports.setCommitStatus = (projectId, sha, status, context) => ({
+    url: `https://gitlab.com/api/v4/projects/${projectId}/statuses/${sha}`,
     body: {
-      sha: sha
+      state: status,
+      context: context
     }
-  });
-
-  exports.unapproveMergeRequest = (projectId, mergeRequestId) => ({
-    url: `https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/unapprove`
   });
 
   exports.getProjectLabels = (projectId) => ({
