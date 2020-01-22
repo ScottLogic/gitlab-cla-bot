@@ -13,7 +13,6 @@ const app = express()
 const port = 3000
 const gitlabToken = process.argv[2];
 const botName = "gitlab-cla-bot";
-const approversPossible = false;
 
 app.use(express.json())
 
@@ -91,8 +90,7 @@ const Handler = async webhook =>
         addComment,
         getMergeRequest,
         getProjectClaFile,
-        approveMergeRequest,
-        unapproveMergeRequest,
+        setCommitStatus,
         getProjectLabels,
         createProjectLabel,
         updateMergeRequestLabels
@@ -115,10 +113,7 @@ const Handler = async webhook =>
     let claConfig = await getProjectClaFile(projectId);
     if (!is.json(claConfig)) {
       logger.error("The .clabot file is not valid JSON");
-      if(approversPossible)
-      {
-        await unapproveMergeRequest(projectId, mergeRequestId);
-      }
+      await setCommitStatus(projectId, headSha, "failed", botName)
       throw new Error("The .clabot file is not valid JSON");
     }
 
@@ -151,10 +146,7 @@ const Handler = async webhook =>
 
     const removeLabelAndUnapprove = async users => {
       await removeBotLabel();
-      if(approversPossible)
-      {
-        await unapproveMergeRequest(projectId, mergeRequestId);
-      }
+      await setCommitStatus(projectId, headSha, "failed", botName)
       return `CLA has not been signed by users ${users}, added a comment to ${mergeRequestUrl}`;
     };
     
@@ -178,14 +170,11 @@ const Handler = async webhook =>
       const nonContributors = await verifier(commiterInfo.distinctUsersToVerify, token);
 
       if(nonContributors.length === 0) {
-        logger.info("All contributors have a signed CLA, adding success status to the pull request and a label");
+        logger.info("All contributors have a signed CLA, adding success status to the commit and a label");
         await addBotLabel();
-        if(approversPossible)
-        {
-          await approveMergeRequest(projectId, mergeRequestId, headSha);
-        }
+        await setCommitStatus(projectId, headSha, "success", botName);
 
-        message = `added label ${botConfig.label} to ${mergeRequestUrl}`;
+        message = `Updated commit status and added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
         const usersWithoutCLA = sortUnique(nonContributors).map(login => `@${login}`).join(", ");
 
