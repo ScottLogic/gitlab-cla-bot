@@ -1,5 +1,4 @@
 'use strict'
-const express = require('express')
 const fs = require("fs");
 const is = require("is_js");
 const path = require("path");
@@ -9,29 +8,8 @@ const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
 const getCommiterInfo = require("./committerFinder")
 
-const app = express()
-const port = 3000
-const gitlabToken = process.argv[2];
+const gitlabToken = "";
 const botName = "gitlab-cla-bot";
-
-app.use(express.json())
-
-app.get('/', (req, res) => res.end('Please send a post request'))
-
-app.post('/', async function (req, res) {
-  try{
-    var body = req.body;
-    var msg = await Handler(body)
-    res.send(msg)
-  }
-  catch (err)
-  {
-    logger.error(err.toString());
-    res.send(err.toString());
-  }
-})
-
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 /*******/
 const sortUnique = arr => arr.sort((a, b) => a - b).filter((value, index, self) => self.indexOf(value, index + 1) === -1);
