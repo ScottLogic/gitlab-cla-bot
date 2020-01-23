@@ -70,8 +70,10 @@ const obtainToken = webhook => gitlabToken
 
 const commentSummonsBot = comment => comment.match(new RegExp(`@${botName}(\\[bot\\])?\\s*check`)) !== null;
 
-const Handler = async webhook => 
+const Handler = async request => 
 {
+    let webhook = JSON.parse(request.body);
+
     if (!validAction(webhook)) {
         return `ignored action of type ${webhook.object_kind}`;
     }
