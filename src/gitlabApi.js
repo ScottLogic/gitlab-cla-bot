@@ -1,6 +1,5 @@
 const requestp = require("./requestAsPromise");
 
-// TODO : Remove the use of private token
 exports.gitlabRequest = (opts, token, method = "POST") =>
   requestp(
     Object.assign(
@@ -22,13 +21,13 @@ exports.gitlabRequest = (opts, token, method = "POST") =>
     method: "GET"
   });
 
-  exports.getParticipants = (projectId, mergeRequestId) => ({
-    url: `https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/participants`,
+  exports.getUserInfo = (emailAddress) => ({
+    url: `https://gitlab.com/api/v4/users?search=${encodeURIComponent(emailAddress)}`,
     method: "GET"
   });
 
   exports.getProjectClaFile = (projectId) => ({
-    // TODO : Assumes master branch, which is probably not acceptable
+    // This assumes master branch, might need to rework this at some point
     url: `https://gitlab.com/api/v4/projects/${projectId}/repository/files/%2Eclabot/raw?ref=master`,
     method: "GET"
   });

@@ -34,8 +34,6 @@ app.post('/', async function (req, res) {
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 /*******/
-const sortUnique = arr => arr.sort((a, b) => a - b).filter((value, index, self) => self.indexOf(value, index + 1) === -1);
-
 const defaultConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, "default.json")));
 
 // At the moment we're only accepting triggers from merge requests (updates or notes added)
@@ -109,7 +107,7 @@ const Handler = async webhook =>
     const MRInfo = await getMergeRequest(projectId, mergeRequestId);
     const headSha = MRInfo.sha;
   
-    // TODO : Investigate org level .clabot file. Also, does the github version search for files as opposed to knowing where they are stored?
+    // TODO : Investigate group level .clabot file.
     let claConfig = await getProjectClaFile(projectId);
     if (!is.json(claConfig)) {
       logger.error("The .clabot file is not valid JSON");
@@ -119,7 +117,7 @@ const Handler = async webhook =>
 
     const botConfig = Object.assign({}, defaultConfig, claConfig);
     
-    // Ensure the label exists on the project (maybe extend to groups at a later date)
+    // Ensure the label exists on the project
     var existingLabels = await getProjectLabels(projectId, botConfig.label);
     if(existingLabels.find(l => l.name === botConfig.label) === undefined) {
       await createProjectLabel(projectId, botConfig.label)
@@ -159,12 +157,6 @@ const Handler = async webhook =>
       await SendTokenisedComment(botConfig.messageMissingEmail, { unidentifiedUsers: unidentifiedString });
 
       message = removeLabelAndUnapprove(unidentifiedString);
-    } else if(commiterInfo.unknownParticipants.length > 0) {
-      const unidentifiedString = commiterInfo.unknownParticipants.join(", ");
-      logger.info(`Some commits were authored by the following users who are not participants: ${unidentifiedString}. `);
-      await SendTokenisedComment(botConfig.messageMissingParticipants, { unidentifiedUsers: unidentifiedString });
-
-      message = removeLabelAndUnapprove(unidentifiedString);
     } else {
       const verifier = contributionVerifier(botConfig);
       const nonContributors = await verifier(commiterInfo.distinctUsersToVerify, token);
@@ -176,7 +168,7 @@ const Handler = async webhook =>
 
         message = `Updated commit status and added label ${botConfig.label} to ${mergeRequestUrl}`;
       } else {
-        const usersWithoutCLA = sortUnique(nonContributors).map(login => `@${login}`).join(", ");
+        const usersWithoutCLA = nonContributors.map(login => `@${login}`).join(", ");
 
         logger.info(`The contributors ${usersWithoutCLA} have not signed the CLA`);
         await SendTokenisedComment(botConfig.message, {usersWithoutCLA: usersWithoutCLA});
