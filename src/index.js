@@ -75,8 +75,6 @@ const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
 // exports.Handler = async request => 
 exports.Handler = constructHandler(async webhook =>
   {
-    let webhook = JSON.parse(request.body);
-
     if (!validAction(webhook)) {
         return `ignored action of type ${webhook.object_kind}`;
     }
