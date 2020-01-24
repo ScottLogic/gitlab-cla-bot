@@ -1,0 +1,12 @@
+service: gitlab-example
+provider:
+  name: aws
+  stage: dev
+  runtime: nodejs12.x
+  region: ${opt:region, 'us-east-2'}
+  
+functions:
+  handler:
+    handler: index.Handler
+    events:
+      - http: POST handler

@@ -1,5 +1,4 @@
 'use strict'
-const express = require('express')
 const fs = require("fs");
 const is = require("is_js");
 const path = require("path");
@@ -9,29 +8,8 @@ const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
 const getCommiterInfo = require("./committerFinder")
 
-const app = express()
-const port = 3000
-const gitlabToken = process.argv[2];
+const gitlabToken = "";
 const botName = "gitlab-cla-bot";
-
-app.use(express.json())
-
-app.get('/', (req, res) => res.end('Please send a post request'))
-
-app.post('/', async function (req, res) {
-  try{
-    var body = req.body;
-    var msg = await Handler(body)
-    res.send(msg)
-  }
-  catch (err)
-  {
-    logger.error(err.toString());
-    res.send(err.toString());
-  }
-})
-
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 /*******/
 const sortUnique = arr => arr.sort((a, b) => a - b).filter((value, index, self) => self.indexOf(value, index + 1) === -1);
@@ -70,17 +48,24 @@ const obtainToken = webhook => gitlabToken
 
 const commentSummonsBot = comment => comment.match(new RegExp(`@${botName}(\\[bot\\])?\\s*check`)) !== null;
 
-const Handler = async request => 
+function buildResponse(statusCode, responseBody) {
+  return {
+       statusCode: statusCode,
+       body: responseBody,
+   };
+}
+
+exports.Handler = async request => 
 {
     let webhook = JSON.parse(request.body);
 
     if (!validAction(webhook)) {
-        return `ignored action of type ${webhook.object_kind}`;
+        return buildResponse(400, `ignored action of type ${webhook.object_kind}`);
     }
 
     if (webhook.object_kind === "note") {
         if (!commentSummonsBot(webhook.object_attributes.note)) {
-            return "the comment didn\'t summon the cla-bot";
+            return buildResponse(200, "the comment didn\'t summon the cla-bot");
         }
         // TODO : Check if the CLA bot has summoned itself
 
@@ -192,6 +177,6 @@ const Handler = async request =>
     await addComment(projectId, mergeRequestId, botConfig.recheckComment);
   }
 
-  return message
+  return buildResponse(200, message);
 }
 
