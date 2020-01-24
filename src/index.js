@@ -53,7 +53,7 @@ const response = body => ({
   body: JSON.stringify(body)
 });
 
-// wrap a handler function in something that builds a response message
+// extract JSON from request body to pass to the event handler, turn the result in a response object
 const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
   try {
     const res = await fn(JSON.parse(body));
@@ -72,7 +72,6 @@ const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
   logger.flush();
 };
 
-// exports.Handler = async request => 
 exports.Handler = constructHandler(async webhook =>
   {
     if (!validAction(webhook)) {
