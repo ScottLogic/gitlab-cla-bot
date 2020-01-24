@@ -48,24 +48,42 @@ const obtainToken = webhook => gitlabToken
 
 const commentSummonsBot = comment => comment.match(new RegExp(`@${botName}(\\[bot\\])?\\s*check`)) !== null;
 
-function buildResponse(statusCode, responseBody) {
-  return {
-       statusCode: statusCode,
-       body: responseBody,
-   };
-}
+const response = body => ({
+  statusCode: 200,
+  body: JSON.stringify(body)
+});
 
-exports.Handler = async request => 
-{
+// wrap a handler function in something that builds a response message
+const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
+  try {
+    const res = await fn(JSON.parse(body));
+
+    if (typeof res === "string") {
+      logger.debug("integration webhook callback response", res);
+      callback(null, response({ message: res }));
+    } else {
+      logger.error(`unexpected lambda function return value ${res}`);
+    }
+  } catch (err) {
+    logger.error(err.toString());
+    callback(err.toString());
+  }
+
+  logger.flush();
+};
+
+// exports.Handler = async request => 
+exports.Handler = constructHandler(async webhook =>
+  {
     let webhook = JSON.parse(request.body);
 
     if (!validAction(webhook)) {
-        return buildResponse(400, `ignored action of type ${webhook.object_kind}`);
+        return `ignored action of type ${webhook.object_kind}`;
     }
 
     if (webhook.object_kind === "note") {
         if (!commentSummonsBot(webhook.object_attributes.note)) {
-            return buildResponse(200, "the comment didn\'t summon the cla-bot");
+            return "the comment didn\'t summon the cla-bot";
         }
         // TODO : Check if the CLA bot has summoned itself
 
@@ -177,6 +195,5 @@ exports.Handler = async request =>
     await addComment(projectId, mergeRequestId, botConfig.recheckComment);
   }
 
-  return buildResponse(200, message);
-}
-
+  return message;
+});
