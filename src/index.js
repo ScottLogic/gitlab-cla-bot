@@ -20,8 +20,8 @@ app.get('/', (req, res) => res.end('Please send a post request'))
 
 app.post('/', async function (req, res) {
   try{
-    var body = req.body;
-    var msg = await Handler(body)
+    req.body = JSON.stringify(req.body)
+    var msg = await Handler(req)
     res.send(msg)
   }
   catch (err)
