@@ -7,6 +7,6 @@ provider:
   
 functions:
   handler:
-    handler: index.Handler
+    handler: src/index.Handler
     events:
       - http: POST handler
