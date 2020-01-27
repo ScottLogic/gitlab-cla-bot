@@ -1,5 +1,4 @@
 // TODO : Reimplement most of this with AWS
-
 const logMessage = (level, message, detail) => {
   const logData = [new Date().toISOString(), level, message];
   logData.push(JSON.stringify(detail));
