@@ -1,5 +1,4 @@
 'use strict'
-const express = require('express')
 const fs = require("fs");
 const is = require("is_js");
 const path = require("path");
@@ -9,29 +8,8 @@ const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
 const getCommiterInfo = require("./committerFinder")
 
-const app = express()
-const port = 3000
-const gitlabToken = process.argv[2];
+const gitlabToken = "";
 const botName = "gitlab-cla-bot";
-
-app.use(express.json())
-
-app.get('/', (req, res) => res.end('Please send a post request'))
-
-app.post('/', async function (req, res) {
-  try{
-    req.body = JSON.stringify(req.body)
-    var msg = await Handler(req)
-    res.send(msg)
-  }
-  catch (err)
-  {
-    logger.error(err.toString());
-    res.send(err.toString());
-  }
-})
-
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 /*******/
 const defaultConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, "default.json")));
@@ -68,10 +46,30 @@ const obtainToken = webhook => gitlabToken
 
 const commentSummonsBot = comment => comment.match(new RegExp(`@${botName}(\\[bot\\])?\\s*check`)) !== null;
 
-const Handler = async request => 
-{
-    let webhook = JSON.parse(request.body);
+const response = body => ({
+  statusCode: 200,
+  body: JSON.stringify(body)
+});
 
+// extract JSON from request body to pass to the event handler, return the result in an object
+const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
+  try {
+    const res = await fn(JSON.parse(body));
+
+    if (typeof res === "string") {
+      logger.debug("integration webhook callback response", res);
+      callback(null, response({ message: res }));
+    } else {
+      logger.error(`unexpected lambda function return value ${res}`);
+    }
+  } catch (err) {
+    logger.error(err.toString());
+    callback(err.toString());
+  }
+};
+
+exports.Handler = constructHandler(async webhook =>
+  {
     if (!validAction(webhook)) {
         return `ignored action of type ${webhook.object_kind}`;
     }
@@ -184,6 +182,5 @@ const Handler = async request =>
     await addComment(projectId, mergeRequestId, botConfig.recheckComment);
   }
 
-  return message
-}
-
+  return message;
+});
