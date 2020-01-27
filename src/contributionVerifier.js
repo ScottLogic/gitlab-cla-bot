@@ -16,15 +16,15 @@ const domainFromEmail = email => "@" + email.split("@")[1];
 
 const contributorArrayVerifier = contributors => committers => {
   const lowerCaseContributors = contributors.map(c => c.toLowerCase());
-  const [emailVerification, usernameVerification] = partition(
-    lowerCaseContributors,
-    c => c.includes("@")
-  );
-
-  const [domainVerification, exactEmailVerification] = partition(
+  const [
     emailVerification,
-    c => c.startsWith("@")
-  );
+    usernameVerification
+  ] = partition(lowerCaseContributors, c => c.includes("@"));
+
+  const [
+    domainVerification,
+    exactEmailVerification
+  ] = partition(emailVerification, c => c.startsWith("@"));
 
   // check exact email, then domain, then username
   const isValidContributor = c => {
@@ -72,22 +72,29 @@ const webhookVerifier = webhookUrl => committers =>
 
 module.exports = config => {
   const configCopy = Object.assign({}, config);
-  
+
   if (configCopy.contributors) {
     if (is.array(configCopy.contributors)) {
-      logger.info("Checking contributors against the list supplied in the .clabot file")
+      logger.info(
+        "Checking contributors against the list supplied in the .clabot file"
+      );
       return contributorArrayVerifier(configCopy.contributors);
-    } 
-    else if (is.url(configCopy.contributors) && configCopy.contributors.indexOf("?") !== -1) 
-    {
-      logger.info("Checking contributors against the webhook supplied in the .clabot file");
+    } else if (
+      is.url(configCopy.contributors) &&
+      configCopy.contributors.indexOf("?") !== -1
+    ) {
+      logger.info(
+        "Checking contributors against the webhook supplied in the .clabot file"
+      );
       return webhookVerifier(configCopy.contributors);
-    } 
-    else if (is.url(configCopy.contributors)) 
-    {
-      logger.info("Checking contributors against the URL supplied in the .clabot file");
+    } else if (is.url(configCopy.contributors)) {
+      logger.info(
+        "Checking contributors against the URL supplied in the .clabot file"
+      );
       return configFileFromUrlVerifier(configCopy.contributors);
     }
   }
-  throw new Error("A mechanism for verifying contributors has not been specified");
+  throw new Error(
+    "A mechanism for verifying contributors has not been specified"
+  );
 };
