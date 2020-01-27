@@ -14,7 +14,7 @@ const logger = {
   },
   error(message, detail) {
     logMessage("ERROR", message, detail);
-  }  
+  }
 };
 
 module.exports = logger;
