@@ -39,8 +39,10 @@ module.exports = async (projectId, mergeRequestId, gitlabToken) => {
 
     const unknownParticipants = hydratedUsersToVerify.filter(c => c.login === undefined).map(u => u.name);
     if(unknownParticipants.length > 0) {
-        // This should never happen as gitlab users should have both an email and username
-        throw new Error(`Failed to find the username for the following users ${unknownParticipants.join(", ")}`);
+        // We've failed to look up a user by their email address.
+        // TODO : Should this be a separate response message?
+        response.unresolvedLoginNames = unknownParticipants
+        return response;
     }
 
     response.distinctUsersToVerify = hydratedUsersToVerify;
