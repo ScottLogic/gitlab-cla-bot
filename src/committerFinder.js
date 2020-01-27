@@ -12,7 +12,7 @@ const hydrateGitlabUserInfo = async (usersToVerify, token) =>
                 login: response.length > 0 ? response[0].username  : undefined
             }))
         )
-    ).then(responses => responses);
+    );
 
 module.exports = async (projectId, mergeRequestId, gitlabToken) => {
     // Get the base commits from the gitlab API
