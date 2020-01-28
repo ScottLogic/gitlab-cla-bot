@@ -173,7 +173,7 @@ exports.Handler = constructHandler(async webhook => {
     const verifier = contributionVerifier(botConfig);
     const nonContributors = await verifier(
       commiterInfo.distinctUsersToVerify,
-      token
+      gitlabToken
     );
 
     if (nonContributors.length === 0) {
