@@ -12,9 +12,10 @@ const mockRequest = ({ error, response, body, verifyRequest = noop }) => (
   cb(error, response, body);
 };
 
-// mock multiple requests, mapped by URL
+// mock multiple requests, mapped by URL and method
 const mockMultiRequest = config => (opts, cb) => {
   const url =
+    (opts.method == "PUT" ? "PUT-" : "") +
     opts.url +
     (opts.qs
       ? "?" +
@@ -36,6 +37,7 @@ describe("lambda function", () => {
   let requests = {};
   let statusSetAttempts = 0;
   let addRecheckCommentsAttempts = 0;
+  let addLabelAttempts = 0;
 
   const bot_name = "gitlab-cla-bot";
   const project_id = "1234";
@@ -62,6 +64,7 @@ describe("lambda function", () => {
   beforeEach(() => {
     statusSetAttempts = 0;
     addRecheckCommentsAttempts = 0;
+    addLabelAttempts = 0;
 
     // a standard event input for the lambda
     event = {
@@ -121,6 +124,20 @@ describe("lambda function", () => {
     };
   };
 
+  const setupExpectedLabelCreation = labels => {
+    requests[
+      `PUT-https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
+    ] = {
+      verifyRequest: opts => {
+        let arrayEquality =
+          labels.length == opts.body.labels.length &&
+          labels.every((value, index) => value === opts.body.labels[index]);
+        expect(arrayEquality).toEqual(true);
+        addLabelAttempts++;
+      }
+    };
+  };
+
   const setupExpectedStatusUpdate = status => {
     requests[
       `https://gitlab.com/api/v4/projects/${project_id}/statuses/${MR_sha}`
@@ -152,6 +169,8 @@ describe("lambda function", () => {
       );
     });
   };
+
+  /*********************** TEST CASES ***********************/
 
   it("should ignore events with an unknown object kind", done => {
     event.body.object_kind = "invalid_object_kind";
@@ -249,6 +268,45 @@ describe("lambda function", () => {
         );
         expect(statusSetAttempts).toEqual(1);
         expect(addRecheckCommentsAttempts).toEqual(0);
+        done();
+      });
+    });
+
+    it("should not attempt to add the bot label to the MR if it already exists", done => {
+      setupExpectedLabelCreation([bot_config.label]);
+      setupMockDependancies();
+
+      const lambda = require("../src/index.js");
+      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
+        expect(err).toBeNull();
+        expect(result.message).toEqual(
+          `Updated commit status and added label ${bot_config.label} to ${project_url}`
+        );
+        expect(addLabelAttempts).toEqual(0);
+        done();
+      });
+    });
+
+    it("should append the bot label to an MR if it hasn't already been added", done => {
+      requests[
+        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
+      ] = {
+        body: {
+          sha: MR_sha,
+          labels: ["dummy_label"]
+        }
+      };
+
+      setupExpectedLabelCreation(["dummy_label", bot_config.label]);
+      setupMockDependancies();
+
+      const lambda = require("../src/index.js");
+      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
+        expect(err).toBeNull();
+        expect(result.message).toEqual(
+          `Updated commit status and added label ${bot_config.label} to ${project_url}`
+        );
+        expect(addLabelAttempts).toEqual(1);
         done();
       });
     });
