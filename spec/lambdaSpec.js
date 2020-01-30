@@ -170,30 +170,58 @@ describe("lambda function", () => {
     });
   };
 
+  const runTest = (testInputs, done) => {
+    const lambda = require("../src/index.js");
+    adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
+      if (testInputs.expectedError !== undefined) {
+        expect(err).toEqual(testInputs.expectedError);
+      } else {
+        expect(err).toBeNull();
+      }
+      if (testInputs.expectedMessage !== undefined) {
+        expect(result.message).toEqual(testInputs.expectedMessage);
+      }
+
+      if (testInputs.expectedStatusSetAttempts !== undefined) {
+        expect(statusSetAttempts).toEqual(testInputs.expectedStatusSetAttempts);
+      }
+
+      if (testInputs.expectedAddRecheckCommentsAttempts !== undefined) {
+        expect(addRecheckCommentsAttempts).toEqual(
+          testInputs.expectedAddRecheckCommentsAttempts
+        );
+      }
+
+      if (testInputs.expectedAddLabelAttempts !== undefined) {
+        expect(addLabelAttempts).toEqual(testInputs.expectedAddLabelAttempts);
+      }
+
+      done();
+    });
+  };
+
   /*********************** TEST CASES ***********************/
 
   it("should ignore events with an unknown object kind", done => {
     event.body.object_kind = "invalid_object_kind";
 
-    const lambda = require("../src/index.js");
-    adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-      expect(err).toBeNull();
-      expect(result.message).toEqual(
-        "ignored action of type invalid_object_kind"
-      );
-      done();
-    });
+    runTest(
+      {
+        expectedMessage: "ignored action of type invalid_object_kind"
+      },
+      done
+    );
   });
 
   it("should ignore note events with an invalid noteable type", done => {
     event.body.object_attributes.noteable_type = "invalid_noteable";
 
-    const lambda = require("../src/index.js");
-    adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-      expect(err).toBeNull();
-      expect(result.message).toEqual("ignored action of type note");
-      done();
-    });
+    runTest(
+      {
+        expectedMessage: "ignored action of type note"
+      },
+      done
+    );
   });
 
   describe("HTTP issues", () => {
@@ -208,13 +236,12 @@ describe("lambda function", () => {
 
       setupMockDependancies();
 
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, err => {
-        expect(err).toEqual(
-          `Error: API request https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id} failed with status 403`
-        );
-        done();
-      });
+      runTest(
+        {
+          expectedError: `Error: API request https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id} failed with status 403`
+        },
+        done
+      );
     });
   });
 
@@ -228,13 +255,13 @@ describe("lambda function", () => {
 
       setupExpectedStatusUpdate("failed");
       setupMockDependancies();
-
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, err => {
-        expect(err).toEqual("Error: The .clabot file is not valid JSON");
-        expect(statusSetAttempts).toEqual(1);
-        done();
-      });
+      runTest(
+        {
+          expectedError: "Error: The .clabot file is not valid JSON",
+          expectedStatusSetEvent: 1
+        },
+        done
+      );
     });
   });
 
@@ -243,16 +270,13 @@ describe("lambda function", () => {
       event.body.object_kind = "note";
       setupMockDependancies();
 
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-        expect(err).toBeNull();
-        expect(result.message).toEqual(
-          `Updated commit status and added label ${bot_config.label} to ${project_url}`
-        );
-        expect(statusSetAttempts).toEqual(1);
-        expect(addRecheckCommentsAttempts).toEqual(1);
-        done();
-      });
+      runTest(
+        {
+          expectedMessage: `Updated commit status and added label ${bot_config.label} to ${project_url}`,
+          expectedAddRecheckCommentsAttempts: 1
+        },
+        done
+      );
     });
 
     it("should set commit status but not add comment if object_type is merge_request", done => {
@@ -260,31 +284,26 @@ describe("lambda function", () => {
       event.body.object_attributes.iid = merge_request_id;
       setupMockDependancies();
 
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-        expect(err).toBeNull();
-        expect(result.message).toEqual(
-          `Updated commit status and added label ${bot_config.label} to ${project_url}`
-        );
-        expect(statusSetAttempts).toEqual(1);
-        expect(addRecheckCommentsAttempts).toEqual(0);
-        done();
-      });
+      runTest(
+        {
+          expectedMessage: `Updated commit status and added label ${bot_config.label} to ${project_url}`,
+          expectedAddRecheckCommentsAttempts: 0
+        },
+        done
+      );
     });
 
     it("should not attempt to add the bot label to the MR if it already exists", done => {
       setupExpectedLabelCreation([bot_config.label]);
       setupMockDependancies();
 
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-        expect(err).toBeNull();
-        expect(result.message).toEqual(
-          `Updated commit status and added label ${bot_config.label} to ${project_url}`
-        );
-        expect(addLabelAttempts).toEqual(0);
-        done();
-      });
+      runTest(
+        {
+          expectedMessage: `Updated commit status and added label ${bot_config.label} to ${project_url}`,
+          expectedAddLabelAttempts: 0
+        },
+        done
+      );
     });
 
     it("should append the bot label to an MR if it hasn't already been added", done => {
@@ -300,15 +319,13 @@ describe("lambda function", () => {
       setupExpectedLabelCreation(["dummy_label", bot_config.label]);
       setupMockDependancies();
 
-      const lambda = require("../src/index.js");
-      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
-        expect(err).toBeNull();
-        expect(result.message).toEqual(
-          `Updated commit status and added label ${bot_config.label} to ${project_url}`
-        );
-        expect(addLabelAttempts).toEqual(1);
-        done();
-      });
+      runTest(
+        {
+          expectedMessage: `Updated commit status and added label ${bot_config.label} to ${project_url}`,
+          expectedAddLabelAttempts: 1
+        },
+        done
+      );
     });
   });
 });
