@@ -8,7 +8,7 @@ const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
 const getCommiterInfo = require("./committerFinder");
 
-const gitlabToken = "";
+const gitlabToken = process.env.GITHUB_ACCESS_TOKEN;
 const botName = "gitlab-cla-bot";
 
 /*******/
@@ -61,15 +61,17 @@ const constructHandler = fn => async ({ body }, lambdaContext, callback) => {
     const res = await fn(JSON.parse(body));
 
     if (typeof res === "string") {
-      logger.debug("integration webhook callback response", res);
+      logger.debug("integration webhook callback response: ", res);
       callback(null, response({ message: res }));
     } else {
-      logger.error(`unexpected lambda function return value ${res}`);
+      logger.error(`unexpected lambda function return value: ${res}`);
     }
   } catch (err) {
     logger.error(err.toString());
     callback(err.toString());
   }
+
+  logger.flush();
 };
 
 exports.Handler = constructHandler(async webhook => {
