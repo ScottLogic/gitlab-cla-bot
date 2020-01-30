@@ -8,7 +8,7 @@ const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
 const getCommiterInfo = require("./committerFinder");
 
-const gitlabToken = process.env.GITHUB_ACCESS_TOKEN;
+const gitlabToken = process.env.GITLAB_ACCESS_TOKEN;
 const botName = "gitlab-cla-bot";
 
 /*******/

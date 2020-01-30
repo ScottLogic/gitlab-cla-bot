@@ -10,7 +10,7 @@ provider:
   region: ${opt:region, 'us-east-2'}
   environment:
     LOGGING_BUCKET: ${self:custom.loggingBucketName}
-    GITHUB_ACCESS_TOKEN: YOUR_TOKEN_HERE
+    GITLAB_ACCESS_TOKEN: YOUR_TOKEN_HERE
   iamRoleStatements:
     - Effect: Allow
       Action:
