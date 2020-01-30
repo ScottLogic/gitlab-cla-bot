@@ -168,7 +168,8 @@ exports.Handler = constructHandler(async webhook => {
       unidentifiedUsers: unidentifiedString
     });
 
-    message = removeLabelAndUnapprove(unidentifiedString);
+    await removeLabelAndUnapprove(unidentifiedString);
+    message = `Unable to determine CLA status for users ${unidentifiedString}, added a comment to ${mergeRequestUrl}`;
   } else {
     const verifier = contributionVerifier(botConfig);
     const nonContributors = await verifier(
@@ -196,7 +197,8 @@ exports.Handler = constructHandler(async webhook => {
         usersWithoutCLA: usersWithoutCLA
       });
 
-      message = removeLabelAndUnapprove(usersWithoutCLA);
+      await removeLabelAndUnapprove(usersWithoutCLA);
+      message = `CLA has not been signed by users ${usersWithoutCLA}, added a comment to ${mergeRequestUrl}`;
     }
   }
 

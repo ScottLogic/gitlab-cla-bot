@@ -50,7 +50,8 @@ describe("lambda function", () => {
   const bot_config = {
     label: "test_bot_label",
     recheckComment: "test_recheck_comment",
-    message: "test_message {{usersWithoutCLA}} with_substitute_item"
+    message: "test_message {{usersWithoutCLA}} with_substitute_item",
+    messageMissingEmail: "test_message_missing_email {{unidentifiedUsers}} with_substitute_item"
   };
 
   const user_to_verify = { login: "distictUserToVerify" };
@@ -411,7 +412,7 @@ describe("lambda function", () => {
       );
     });
 
-    it("should not attempt to remove the label if it already existed", done => {
+    it("should not attempt to remove the label if it didn't already exist", done => {
       requests[
         `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
       ] = {
@@ -426,6 +427,78 @@ describe("lambda function", () => {
       runTest(
         {
           expectedMessage: `CLA has not been signed by users @badUsername1, @badUsername2, added a comment to ${project_url}`,
+          expectedUpdateLabelsCount: 0
+        },
+        done
+      );
+    });
+  });
+
+  describe("some contributers do not have a valid email address on commits", () => {
+    beforeEach(() => {
+      // Add some unresolved login names
+      commitersToFind.unresolvedLoginNames.push("unresolvedUsername1");
+      commitersToFind.unresolvedLoginNames.push("unresolvedUsername2");
+
+      setupUpdateStatusCall("failed");
+      setupUpdateLabelCall([]);
+
+      setupAddCommentCall(
+        bot_config.messageMissingEmail.replace(
+          "{{unidentifiedUsers}}",
+          "unresolvedUsername1, unresolvedUsername2"
+        )
+      );
+    });
+
+    it("should set status, remove label and send a note hydrated with the login names of invalid users", done => {
+      runTest(
+        {
+          expectedMessage: `Unable to determine CLA status for users unresolvedUsername1, unresolvedUsername2, added a comment to ${project_url}`,
+          expectedAddNoteCount: 1,
+          expectedSetStatusCount: 1,
+          expectedUpdateLabelsCount: 1
+        },
+        done
+      );
+    });
+
+    it("should remove only the bot specific label", done => {
+      requests[
+        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
+      ] = {
+        body: {
+          sha: MR_sha,
+          labels: ["dummy_label", bot_config.label, "dummyLabel2"]
+        }
+      };
+
+      setupUpdateLabelCall(["dummy_label", "dummyLabel2"]);
+
+      runTest(
+        {
+          expectedMessage: `Unable to determine CLA status for users unresolvedUsername1, unresolvedUsername2, added a comment to ${project_url}`,
+          expectedUpdateLabelsCount: 1
+        },
+        done
+      );
+    });
+
+    it("should not attempt to remove the label if it didn't already exist", done => {
+      requests[
+        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
+      ] = {
+        body: {
+          sha: MR_sha,
+          labels: ["dummy_label"]
+        }
+      };
+
+      setupUpdateLabelCall(["dummy_label"]);
+
+      runTest(
+        {
+          expectedMessage: `Unable to determine CLA status for users unresolvedUsername1, unresolvedUsername2, added a comment to ${project_url}`,
           expectedUpdateLabelsCount: 0
         },
         done
