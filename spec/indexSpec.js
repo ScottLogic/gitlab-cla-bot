@@ -280,10 +280,10 @@ describe("lambda function", () => {
     it("should add the bot label to an MR if it hasn't already been added", done => {
       gitlabApiMocks.getMergeRequest = () => ({
         sha: MR_sha,
-        labels: ["dummy_label"]
+        labels: ["dummyLabel"]
       });
 
-      setupUpdateLabelCall(["dummy_label", bot_config.label]);
+      setupUpdateLabelCall(["dummyLabel", bot_config.label]);
 
       runTest(
         {
@@ -331,10 +331,10 @@ describe("lambda function", () => {
     it("should remove only the bot specific label", done => {
       gitlabApiMocks.getMergeRequest = () => ({
         sha: MR_sha,
-        labels: ["dummy_label", bot_config.label, "dummyLabel2"]
+        labels: ["dummyLabel", bot_config.label, "dummyLabel2"]
       });
 
-      setupUpdateLabelCall(["dummy_label", "dummyLabel2"]);
+      setupUpdateLabelCall(["dummyLabel", "dummyLabel2"]);
 
       runTest(
         {
@@ -348,10 +348,10 @@ describe("lambda function", () => {
     it("should not attempt to remove the label if it didn't already exist", done => {
       gitlabApiMocks.getMergeRequest = () => ({
         sha: MR_sha,
-        labels: ["dummy_label"]
+        labels: ["dummyLabel"]
       });
 
-      setupUpdateLabelCall(["dummy_label"]);
+      setupUpdateLabelCall(["dummyLabel"]);
 
       runTest(
         {
@@ -395,10 +395,10 @@ describe("lambda function", () => {
     it("should remove only the bot specific label", done => {
       gitlabApiMocks.getMergeRequest = () => ({
         sha: MR_sha,
-        labels: ["dummy_label", bot_config.label, "dummyLabel2"]
+        labels: ["dummyLabel", bot_config.label, "dummyLabel2"]
       });
 
-      setupUpdateLabelCall(["dummy_label", "dummyLabel2"]);
+      setupUpdateLabelCall(["dummyLabel", "dummyLabel2"]);
 
       runTest(
         {
@@ -412,10 +412,10 @@ describe("lambda function", () => {
     it("should not attempt to remove the label if it didn't already exist", done => {
       gitlabApiMocks.getMergeRequest = () => ({
         sha: MR_sha,
-        labels: ["dummy_label"]
+        labels: ["dummyLabel"]
       });
 
-      setupUpdateLabelCall(["dummy_label"]);
+      setupUpdateLabelCall(["dummyLabel"]);
 
       runTest(
         {
