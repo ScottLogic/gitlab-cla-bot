@@ -190,6 +190,20 @@ describe("lambda function", () => {
     );
   });
 
+  it("should ignore valid notes that do not summon the bot", done => {
+    event.body.object_kind = "note";
+    event.body.object_attributes.noteable_type = "MergeRequest";
+    event.body.object_attributes.note =
+      "I am a note that does not summon the bot";
+
+    runTest(
+      {
+        expectedMessage: "the comment didn't summon the cla-bot"
+      },
+      done
+    );
+  });
+
   it("should add the label to the project if it doesn't already exist", done => {
     let addProjectLabelCount = 0;
 
