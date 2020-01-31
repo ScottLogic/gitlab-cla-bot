@@ -4,37 +4,9 @@ const noop = () => {};
 
 console.info = noop;
 
-const mockRequest = ({ error, response, body, verifyRequest = noop }) => (
-  opts,
-  cb
-) => {
-  verifyRequest(opts, cb);
-  cb(error, response, body);
-};
-
-// mock multiple requests, mapped by URL and method
-const mockMultiRequest = config => (opts, cb) => {
-  const url =
-    (opts.method == "PUT" ? "PUT-" : "") +
-    opts.url +
-    (opts.qs
-      ? "?" +
-        Object.keys(opts.qs)
-          .map(k => `${k}=${opts.qs[k]}`)
-          .join("=") // eslint-disable-line
-      : "");
-  if (config[url]) {
-    return mockRequest(config[url])(opts, cb);
-  } else {
-    console.error(`No mock found for request ${url}`);
-    fail(`No mock found for request ${url}`);
-    return {};
-  }
-};
-
 describe("lambda function", () => {
   let event = {};
-  let requests = {};
+  let gitlabApiMocks = {};
   let actualSetStatusCount = 0;
   let actualAddCommentsCount = 0;
   let actualUpdateLabelsCount = 0;
@@ -69,7 +41,7 @@ describe("lambda function", () => {
     actualAddCommentsCount = 0;
     actualUpdateLabelsCount = 0;
 
-    // a standard event input for the lambda
+    // A standard event input for the lambda
     event = {
       body: {
         object_kind: "merge_request",
@@ -95,72 +67,53 @@ describe("lambda function", () => {
         .map(u => u.login)
     );
 
-    // Setup default mocks. These drive the system through its happy path where everyone has signed the CLA.
-    requests[
-      `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-    ] = {
-      body: {
-        sha: MR_sha,
-        labels: [bot_config.label]
-      }
-    };
+    gitlabApiMocks.gitlabRequest = opts => opts;
 
-    requests[
-      `https://gitlab.com/api/v4/projects/${project_id}/repository/files/%2Eclabot/raw?ref=master`
-    ] = {
-      body: bot_config
-    };
+    gitlabApiMocks.getMergeRequest = () => ({
+      sha: MR_sha,
+      labels: [bot_config.label]
+    });
 
-    requests[`https://gitlab.com/api/v4/projects/${project_id}/labels`] = {
-      body: [bot_config.label]
-    };
+    gitlabApiMocks.getProjectClaFile = () => bot_config;
+
+    gitlabApiMocks.getProjectLabels = () => [{ name: bot_config.label }];
 
     setupUpdateStatusCall("success");
 
-    // remove the cached dependencies so that new mocks can be injected
+    // Remove the cached dependencies so that new mocks can be injected
     Object.keys(require.cache).forEach(key => {
       delete require.cache[key];
     });
   });
 
-  const setupAddCommentCall = comment => {
-    requests[
-      `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}/notes`
-    ] = {
-      verifyRequest: opts => {
-        expect(opts.body.body).toEqual(comment);
-        actualAddCommentsCount++;
-      }
+  const setupAddCommentCall = expectedComment => {
+    gitlabApiMocks.addComment = (projectId, mergeRequestId, comment) => {
+      expect(expectedComment).toEqual(comment);
+      actualAddCommentsCount++;
     };
   };
 
-  const setupUpdateLabelCall = labels => {
-    requests[
-      `PUT-https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-    ] = {
-      verifyRequest: opts => {
-        let arrayEquality =
-          labels.length == opts.body.labels.length &&
-          labels.every((value, index) => value === opts.body.labels[index]);
-        expect(arrayEquality).toEqual(true);
-        actualUpdateLabelsCount++;
-      }
+  const setupUpdateLabelCall = expectedLabels => {
+    gitlabApiMocks.updateMergeRequestLabels = (
+      projectId,
+      mergeRequestId,
+      labels
+    ) => {
+      let arrayEquality =
+        labels.length == expectedLabels.length &&
+        labels.every((value, index) => value === expectedLabels[index]);
+      expect(arrayEquality).toEqual(true);
+      actualUpdateLabelsCount++;
     };
   };
 
-  const setupUpdateStatusCall = status => {
-    requests[
-      `https://gitlab.com/api/v4/projects/${project_id}/statuses/${MR_sha}`
-    ] = {
-      verifyRequest: opts => {
-        expect(opts.body.state).toEqual(status);
-        expect(opts.body.context).toEqual(bot_name);
-        actualSetStatusCount++;
-      }
+  const setupUpdateStatusCall = expectedStatus => {
+    gitlabApiMocks.setCommitStatus = (projectId, sha, status, context) => {
+      expect(expectedStatus).toEqual(status);
+      expect(context).toEqual(bot_name);
+      actualSetStatusCount++;
     };
   };
-
-  // TODO: Test X-GitHub-Event header is a pull_request type
 
   // the code has been migrated to the serverless framework which
   // stringifies the event body, and expects a stringified response
@@ -175,7 +128,7 @@ describe("lambda function", () => {
   };
 
   const runTest = (testInputs, done) => {
-    mock("request", mockMultiRequest(requests));
+    mock("../src/gitlabApi.js", gitlabApiMocks);
 
     const lambda = require("../src/index.js");
     adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
@@ -237,42 +190,19 @@ describe("lambda function", () => {
     );
   });
 
-  describe("HTTP issues", () => {
-    it("should handle http error response to get merge request call", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        response: {
-          statusCode: 403
-        }
-      };
-
-      runTest(
-        {
-          expectedError: `Error: API request https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id} failed with status 403`
-        },
-        done
-      );
-    });
-  });
-
   it("should add the label to the project if it doesn't already exist", done => {
-    let addProjectLabelAttempts = 0;
+    let addProjectLabelCount = 0;
 
-    requests[`https://gitlab.com/api/v4/projects/${project_id}/labels`] = {
-      body: ["dummyLabel"]
-    };
+    gitlabApiMocks.getProjectLabels = () => [{ name: "dummyLabel" }];
 
-    requests[`POST-https://gitlab.com/api/v4/projects/${project_id}/labels`] = {
-      verifyRequest: opts => {
-        expect(opts.body.name).toEqual(bot_config.label);
-        addProjectLabelAttempts++;
-      }
+    gitlabApiMocks.createProjectLabel = (projectId, label) => {
+      expect(label).toEqual(bot_config.label);
+      addProjectLabelCount++;
     };
 
     runTest(
       {
-        cb: () => expect(addProjectLabelAttempts).toEqual(0)
+        cb: () => expect(addProjectLabelCount).toEqual(1)
       },
       done
     );
@@ -280,11 +210,7 @@ describe("lambda function", () => {
 
   describe("clabot configuration resolution", () => {
     it("should detect a malformed clabot file and set commit status", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/repository/files/%2Eclabot/raw?ref=master`
-      ] = {
-        body: "I am not JSON"
-      };
+      gitlabApiMocks.getProjectClaFile = () => "I am not JSON";
 
       setupUpdateStatusCall("failed");
 
@@ -338,14 +264,10 @@ describe("lambda function", () => {
     });
 
     it("should add the bot label to an MR if it hasn't already been added", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        body: {
-          sha: MR_sha,
-          labels: ["dummy_label"]
-        }
-      };
+      gitlabApiMocks.getMergeRequest = () => ({
+        sha: MR_sha,
+        labels: ["dummy_label"]
+      });
 
       setupUpdateLabelCall(["dummy_label", bot_config.label]);
 
@@ -393,14 +315,10 @@ describe("lambda function", () => {
     });
 
     it("should remove only the bot specific label", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        body: {
-          sha: MR_sha,
-          labels: ["dummy_label", bot_config.label, "dummyLabel2"]
-        }
-      };
+      gitlabApiMocks.getMergeRequest = () => ({
+        sha: MR_sha,
+        labels: ["dummy_label", bot_config.label, "dummyLabel2"]
+      });
 
       setupUpdateLabelCall(["dummy_label", "dummyLabel2"]);
 
@@ -414,14 +332,10 @@ describe("lambda function", () => {
     });
 
     it("should not attempt to remove the label if it didn't already exist", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        body: {
-          sha: MR_sha,
-          labels: ["dummy_label"]
-        }
-      };
+      gitlabApiMocks.getMergeRequest = () => ({
+        sha: MR_sha,
+        labels: ["dummy_label"]
+      });
 
       setupUpdateLabelCall(["dummy_label"]);
 
@@ -465,14 +379,10 @@ describe("lambda function", () => {
     });
 
     it("should remove only the bot specific label", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        body: {
-          sha: MR_sha,
-          labels: ["dummy_label", bot_config.label, "dummyLabel2"]
-        }
-      };
+      gitlabApiMocks.getMergeRequest = () => ({
+        sha: MR_sha,
+        labels: ["dummy_label", bot_config.label, "dummyLabel2"]
+      });
 
       setupUpdateLabelCall(["dummy_label", "dummyLabel2"]);
 
@@ -486,14 +396,10 @@ describe("lambda function", () => {
     });
 
     it("should not attempt to remove the label if it didn't already exist", done => {
-      requests[
-        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
-      ] = {
-        body: {
-          sha: MR_sha,
-          labels: ["dummy_label"]
-        }
-      };
+      gitlabApiMocks.getMergeRequest = () => ({
+        sha: MR_sha,
+        labels: ["dummy_label"]
+      });
 
       setupUpdateLabelCall(["dummy_label"]);
 

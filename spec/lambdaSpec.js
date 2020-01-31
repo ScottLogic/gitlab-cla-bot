@@ -55,6 +55,7 @@ describe("lambda function", () => {
     // Depending on the order Jasmine runs the tests other modules may be mocking these
     mock.stop("../src/committerFinder");
     mock.stop("../src/contributionVerifier");
+    mock.stop("../src/gitlabApi");
 
     requests = {};
 
@@ -80,8 +81,6 @@ describe("lambda function", () => {
       delete require.cache[key];
     });
   });
-
-  // TODO: Test X-GitHub-Event header is a pull_request type
 
   // the code has been migrated to the serverless framework which
   // stringifies the event body, and expects a stringified response
@@ -262,6 +261,28 @@ describe("lambda function", () => {
         `CLA has not been signed by users @invalid_test_username, added a comment to ${project_url}`
       );
       done();
+    });
+  });
+
+  describe("HTTP issues", () => {
+    it("should handle http error response to get merge request call", done => {
+      requests[
+        `https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id}`
+      ] = {
+        response: {
+          statusCode: 403
+        }
+      };
+
+      mock("request", mockMultiRequest(requests));
+
+      const lambda = require("../src/index.js");
+      adaptedLambda(lambda.Handler)(event, {}, (err, result) => {
+        expect(err).toBe(
+          `Error: API request https://gitlab.com/api/v4/projects/${project_id}/merge_requests/${merge_request_id} failed with status 403`
+        );
+        done();
+      });
     });
   });
 });
