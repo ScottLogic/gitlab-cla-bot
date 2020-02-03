@@ -9,6 +9,7 @@ const detailedLoggedMessages = [];
 let logFile = "log-" + (new Date().toDateString().replace(/\s/g, '-')); // TODO: nicer date format?
 
 const logMessage = (level, message, detail) => {
+  console.log("In logMessage with level: [" + level + "] and message: [" + message + "] with detail [" + detail + "]");
   const logData = [new Date().toISOString(), level, message];
   
   // super crude filtering! these logs are displayed externally to end users
