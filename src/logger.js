@@ -9,8 +9,8 @@ const detailedLoggedMessages = [];
 let logFile = "log-" + (new Date().toDateString().replace(/\s/g, '-')); // TODO: nicer date format?
 
 const logMessage = (level, message, detail) => {
+  console.log("In logMessage with level: [" + level + "] and message: [" + message + "] with detail [" + detail + "]");
   const logData = [new Date().toISOString(), level, message];
-  logData.push(JSON.stringify(detail));
   
   // super crude filtering! these logs are displayed externally to end users
   // so we need to be v. careful about what is included.
@@ -35,6 +35,7 @@ const logger = {
   error(message, detail) {
     logMessage("ERROR", message, detail);
   },
+  // TODO: understand how this is used
   logFile(filename) {
     loggedMessages.length = [];
     detailedLoggedMessages.length = [];
