@@ -34,12 +34,6 @@ const logger = {
   error(message, detail) {
     logMessage("ERROR", message, detail);
   },
-  // TODO: understand how this is used
-  logFile(filename) {
-    loggedMessages.length = [];
-    detailedLoggedMessages.length = [];
-    logFile = filename;
-  },
   flush() {
 
     if (process.env.JASMINE) {
