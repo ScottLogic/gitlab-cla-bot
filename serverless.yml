@@ -1,12 +1,32 @@
 service: gitlab-example
+
+custom:
+  loggingBucketName: gitlab-cla-bot-logs
+
 provider:
   name: aws
   stage: dev
   runtime: nodejs12.x
   region: ${opt:region, 'us-east-2'}
+  environment:
+    LOGGING_BUCKET: ${self:custom.loggingBucketName}
+    GITLAB_ACCESS_TOKEN: YOUR_TOKEN_HERE
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource:
+        - 'arn:aws:s3:::${self:custom.loggingBucketName}/*'
   
 functions:
   handler:
     handler: src/index.Handler
     events:
       - http: POST handler
+
+resources:
+  Resources:
+    GitlabClaBotLoggingBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.loggingBucketName}
