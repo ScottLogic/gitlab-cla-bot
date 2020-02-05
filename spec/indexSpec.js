@@ -67,6 +67,13 @@ describe("lambda function", () => {
         .map(u => u.login)
     );
 
+    mock("../src/logger", {
+      debug: function(message) {},
+      error: function(message) {},
+      flush: function(message) {},
+      info: function(message) {}
+    });
+
     gitlabApiMocks.gitlabRequest = opts => opts;
 
     gitlabApiMocks.getMergeRequest = () => ({

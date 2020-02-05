@@ -57,6 +57,13 @@ describe("lambda function", () => {
     mock.stop("../src/contributionVerifier");
     mock.stop("../src/gitlabApi");
 
+    mock("../src/logger", {
+      debug: function(message) {},
+      error: function(message) {},
+      flush: function(message) {},
+      info: function(message) {}
+    });
+
     requests = {};
 
     // a standard event input for the lambda
