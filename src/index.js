@@ -6,7 +6,7 @@ const handlebars = require("handlebars");
 const gitlabApi = require("./gitlabApi");
 const logger = require("./logger");
 const contributionVerifier = require("./contributionVerifier");
-const getCommiterInfo = require("./committerFinder");
+const getCommitterInfo = require("./committerFinder");
 
 const gitlabToken = process.env.GITLAB_ACCESS_TOKEN;
 const botName = "gitlab-cla-bot";
@@ -154,15 +154,15 @@ exports.Handler = constructHandler(async webhook => {
     return `CLA has not been signed by users ${users}, added a comment to ${mergeRequestUrl}`;
   };
 
-  const commiterInfo = await getCommiterInfo(
+  const committerInfo = await getCommitterInfo(
     projectId,
     mergeRequestId,
     gitlabToken
   );
 
   let message;
-  if (commiterInfo.unresolvedLoginNames.length > 0) {
-    const unidentifiedString = commiterInfo.unresolvedLoginNames.join(", ");
+  if (committerInfo.unresolvedLoginNames.length > 0) {
+    const unidentifiedString = committerInfo.unresolvedLoginNames.join(", ");
     logger.info(
       `Some commits from the following contributors are not signed with a valid email address: ${unidentifiedString}. `
     );
@@ -175,7 +175,7 @@ exports.Handler = constructHandler(async webhook => {
   } else {
     const verifier = contributionVerifier(botConfig);
     const nonContributors = await verifier(
-      commiterInfo.distinctUsersToVerify,
+      committerInfo.distinctUsersToVerify,
       gitlabToken
     );
 

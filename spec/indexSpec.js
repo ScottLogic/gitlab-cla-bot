@@ -27,15 +27,15 @@ describe("lambda function", () => {
       "test_message_missing_email {{unidentifiedUsers}} with_substitute_item"
   };
 
-  const user_to_verify = { login: "distictUserToVerify" };
-  const commitersToFind = {
+  const user_to_verify = { login: "distinctUserToVerify" };
+  const committersToFind = {
     unresolvedLoginNames: [],
     distinctUsersToVerify: []
   };
 
   beforeEach(() => {
-    commitersToFind.unresolvedLoginNames = [];
-    commitersToFind.distinctUsersToVerify = [user_to_verify];
+    committersToFind.unresolvedLoginNames = [];
+    committersToFind.distinctUsersToVerify = [user_to_verify];
 
     actualSetStatusCount = 0;
     actualAddCommentsCount = 0;
@@ -60,7 +60,7 @@ describe("lambda function", () => {
       }
     };
 
-    mock("../src/committerFinder", () => commitersToFind);
+    mock("../src/committerFinder", () => committersToFind);
     mock("../src/contributionVerifier", () => usersToVerify =>
       usersToVerify
         .filter(u => u.login != user_to_verify.login)
@@ -238,7 +238,7 @@ describe("lambda function", () => {
     });
   });
 
-  describe("all contributers have signed the CLA", () => {
+  describe("all contributors have signed the CLA", () => {
     it("should add recheck comment and set commit status if object_type is note", done => {
       event.body.object_kind = "note";
       setupAddCommentCall(bot_config.recheckComment);
@@ -295,13 +295,13 @@ describe("lambda function", () => {
     });
   });
 
-  describe("some contributers have not signed the CLA", () => {
+  describe("some contributors have not signed the CLA", () => {
     beforeEach(() => {
-      // Add some dummy contributers that the dummy verifier won't allow
-      commitersToFind.distinctUsersToVerify.push({
+      // Add some dummy contributors that the dummy verifier won't allow
+      committersToFind.distinctUsersToVerify.push({
         login: "badUsername1"
       });
-      commitersToFind.distinctUsersToVerify.push({
+      committersToFind.distinctUsersToVerify.push({
         login: "badUsername2"
       });
 
@@ -363,11 +363,11 @@ describe("lambda function", () => {
     });
   });
 
-  describe("some contributers do not have a valid email address on commits", () => {
+  describe("some contributors do not have a valid email address on commits", () => {
     beforeEach(() => {
       // Add some unresolved login names
-      commitersToFind.unresolvedLoginNames.push("unresolvedUsername1");
-      commitersToFind.unresolvedLoginNames.push("unresolvedUsername2");
+      committersToFind.unresolvedLoginNames.push("unresolvedUsername1");
+      committersToFind.unresolvedLoginNames.push("unresolvedUsername2");
 
       setupUpdateStatusCall("failed");
       setupUpdateLabelCall([]);
