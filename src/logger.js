@@ -6,11 +6,10 @@ const s3 = new AWS.S3({ apiVersion: "2006-03-01" }); // newest version as of Jan
 
 const loggedMessages = [];
 const detailedLoggedMessages = [];
-let logFile = "log-" + (new Date().toDateString().replace(/\s/g, '-')); // TODO: nicer date format?
+let logFile = "log-" + new Date().toDateString().replace(/\s/g, "-"); // TODO: nicer date format?
 
 const logMessage = (level, message, detail) => {
   const logData = [new Date().toISOString(), level, message];
-  
   // super crude filtering! these logs are displayed externally to end users
   // so we need to be v. careful about what is included.
   if (level !== "DEBUG") {
@@ -35,7 +34,6 @@ const logger = {
     logMessage("ERROR", message, detail);
   },
   flush() {
-
     if (process.env.JASMINE) {
       return Promise.resolve({});
     }
