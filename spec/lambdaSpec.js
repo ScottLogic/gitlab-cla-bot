@@ -208,7 +208,7 @@ describe("lambda function", () => {
       ]
     };
 
-    // Get the both users info
+    // Get both users' info
     requests["https://gitlab.com/api/v4/users?search=test_user_email"] = {
       body: [
         {

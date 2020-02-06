@@ -37,6 +37,7 @@ const logger = {
     if (process.env.JASMINE) {
       return Promise.resolve({});
     }
+
     // try to write accumulated logs to bucket
     return Promise.all([
       s3
