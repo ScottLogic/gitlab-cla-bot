@@ -28,5 +28,3 @@ To hook into Gitlab:
 - Add a new webhook triggered by `Comments` and `Merge request events`. Hook URL should be the endpoint you've noted down. Untick security options
 - Click Test->`Note events` or `Merge requests events`
 - Result should appear at the top of the page
-
-Security is a TODO...
