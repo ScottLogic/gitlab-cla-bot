@@ -22,11 +22,8 @@ functions:
   handler:
     handler: src/index.Handler
     events:
+      - existingS3:
+        bucket: ${self:custom.loggingBucketName}
+        events:
+          - s3:*
       - http: POST handler
-
-resources:
-  Resources:
-    GitlabClaBotLoggingBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.loggingBucketName}
