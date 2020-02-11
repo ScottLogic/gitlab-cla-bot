@@ -9,7 +9,7 @@ const goodProjectId = "12345";
 const goodMergeRequestId = "3";
 const goodGitlabToken = "mad3u9t0k3n";
 
-const web_url = "http://foo.com/user/testproject";
+const web_url = "https://gitlab.com/api/v4/projects/";
 
 // cribbed from gitlab API documentation
 const commitsInMR = [
@@ -42,19 +42,50 @@ const commitsInMR = [
   }
 ];
 
-// add some more?
+
+beforeAll(() => {
+    // make sure nothing else is mocking this/cancel the last one
+  mock.stop("../src/gitlabApi");
+    
+  mock("../src/logger", {
+    debug: function(message) {},
+    error: function(message) {},
+    flush: function(message) {},
+    info: function(message) {}
+  });
+
+  // write a mock for gitlabRequest that returns different things based on input?
+  // if x != goodX then return error with...
+    
+  mock("../src/gitlabApi", {
+    gitlabRequest: function(opts, token, method) {
+      
+      // what are opts? A: The body to send, produced by another function
+
+      // TODO: pull out MR and project IDs?
+
+      if(token !== goodGitlabToken)
+      {
+        return Promise.reject(new Error(
+          `API request ${web_url} failed with status ${'401'}`
+          ));
+      } else if(  ) {
+        return Promise.reject(new Error(
+          `API request ${web_url} failed with status ${'404'}`
+         ));
+      }
+
+      return Promise.reject(new Error(
+        `API request ${web_url} failed with status ${'404'}`
+       ));
+    },
+    getCommits: function() {}
+  });
+
+});
 
 // beforeEach
 beforeEach(() => {
-    // but actually mock this?
-    // mock.stop("../src/gitlabApi");
-    
-    mock("../src/logger", {
-      debug: function(message) {},
-      error: function(message) {},
-      flush: function(message) {},
-      info: function(message) {}
-    });
 
     // return something settable?
     // mock("../src/gitlabApi", {
@@ -75,23 +106,18 @@ beforeEach(() => {
 
 });
 
-// after?
+afterAll(() => {
+  mock.stop("../src/gitlabApi");
+  mock.stop("../src/logger");
+});
 
 // tests
 
+// changing parameters is pretty pointless given that everything that depends on them is mocked out
+
+// First three aren't checking much?
+
 it("should handle error from Gitlab for bad project ID", async function() {
-  // change to set up mock here
-  mock("../src/gitlabApi", {
-    gitlabRequest: function() {
-      return Promise.reject(new Error(
-        `API request ${web_url} failed with status ${'404'}`
-       ));
-    },
-    getCommits: function() {
-      // this gets called - why?
-      console.log("I'm a mock for getCommits");
-    }
-  });
 
   const committerFinder = require("../src/committerFinder");
   // takes projectId, mergeRequestId, gitlabToken
@@ -108,8 +134,39 @@ it("should handle error from Gitlab for bad project ID", async function() {
   expect(response).toBeUndefined();
 });
 
-// bad mergeRequestId
-// bad gitlabToken
+// basically the same as the previous request - remove?
+it("should handle error from Gitlab for bad merge request ID", async function() {
+
+  const committerFinder = require("../src/committerFinder");
+  let response = await committerFinder(
+    goodProjectId, 
+    "badMergeRequestId", 
+    goodGitlabToken)
+    .catch( function(error) {
+      expect(error).toBeDefined();
+      expect(error.message).toBeDefined();
+      expect(error.message).toEqual(`API request ${web_url} failed with status ${'404'}`);
+    } );
+
+  expect(response).toBeUndefined();
+});
+
+// bad gitlabToken should lead to code 401
+it("should handle error from Gitlab for bad token", async function() {
+
+  const committerFinder = require("../src/committerFinder");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    "badGitlabToken")
+    .catch( function(error) {
+      expect(error).toBeDefined();
+      expect(error.message).toBeDefined();
+      expect(error.message).toEqual(`API request ${web_url} failed with status ${'401'}`);
+    } );
+
+  expect(response).toBeUndefined();
+});
 
 // retrieved commit list empty (shouldn't be possible?)
 // commit list 1, ok
