@@ -54,42 +54,28 @@ beforeAll(() => {
     info: function(message) {}
   });
 
-  // write a mock for gitlabRequest that returns different things based on input?
-  // if x != goodX then return error with...
-    
   mock("../src/gitlabApi", {
     gitlabRequest: function(opts, token, method) {
-      
-      // what are opts? A: The body to send, produced by another function
-
       if(token !== goodGitlabToken)
       {
         return Promise.reject(new Error(
           `API request ${web_url} failed with status ${'401'}`
           ));
       }
-      
-      // now check in opts which gitlabAPI method was invoked
-      // hacky?
-      switch(opts.method)
-      {
-        case "getCommits":
-          if( opts.args[0] !== goodProjectId || opts.args[1] !==goodMergeRequestId ) {
-            return Promise.reject(new Error(
-              `API request ${web_url} failed with status ${'404'}`
-             ));
-          } else {
-            // return a list of good commits
-            return Promise.resolve(commitsInMR);          
-          }
-        default:
-          // TODO: something?
-          return Promise.reject(new Error("wat"));
+
+      if(opts instanceof Error) {
+        return Promise.reject(opts);
+      } else {
+        return Promise.resolve(opts);
       }
     },
-    getCommits: function() {
-      // turn this into a spy
-      return {method: "getCommits", args: arguments};
+    getCommits: function(projectId, mergeRequestId) {
+      if( projectId !== goodProjectId || mergeRequestId !==goodMergeRequestId ) {
+        return new Error(
+          `API request ${web_url} failed with status ${'404'}`
+         );
+      }
+      return commitsInMR;
     }
   });
 
