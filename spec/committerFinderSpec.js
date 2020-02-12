@@ -50,7 +50,6 @@ const sampleResponse = {
 let gitlabApiMocks = {};
 
 gitlabApiMocks.gitlabRequest = function(opts, token, method) {
-  console.log("standard gitlabRequest mock");
   if(token !== goodGitlabToken)
   {
     return Promise.reject(new Error(
@@ -66,7 +65,6 @@ gitlabApiMocks.gitlabRequest = function(opts, token, method) {
 };
 
 gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
-  console.log("standard getCommits mock");
   if( projectId !== goodProjectId || mergeRequestId !==goodMergeRequestId ) {
     return new Error(
       `API request ${web_url} failed with status ${'404'}`
@@ -78,7 +76,6 @@ gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
 
 // TODO: use good info to return user with login property
 gitlabApiMocks.getUserInfo = function(emailAddress) {
-  console.log("standard getUserInfo mock");
   return [];
 };
 
@@ -95,7 +92,7 @@ beforeAll(() => {
 
 });
 
-beforeEach
+// beforeEach
 beforeEach(() => {
   mock.stop("../src/gitlabApi");
 });
@@ -110,8 +107,8 @@ afterAll(() => {
 // changing parameters is pretty pointless given that everything that depends on them is mocked out
 
 it("should handle error from Gitlab for bad project ID", async function() {
-  mock("../src/gitlabApi.js", gitlabApiMocks);
-  const committerFinder = require("../src/committerFinder");
+  mock("../src/gitlabApi", gitlabApiMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder");
   // takes projectId, mergeRequestId, gitlabToken
   let response = await committerFinder(
     "badProjectId", 
@@ -127,8 +124,8 @@ it("should handle error from Gitlab for bad project ID", async function() {
 });
 
 it("should handle error from Gitlab for bad merge request ID", async function() {
-  mock("../src/gitlabApi.js", gitlabApiMocks);
-  const committerFinder = require("../src/committerFinder");
+  mock("../src/gitlabApi", gitlabApiMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     "badMergeRequestId", 
@@ -143,8 +140,8 @@ it("should handle error from Gitlab for bad merge request ID", async function() 
 });
 
 it("should handle error from Gitlab for bad token", async function() {
-  mock("../src/gitlabApi.js", gitlabApiMocks);
-  const committerFinder = require("../src/committerFinder");
+  mock("../src/gitlabApi", gitlabApiMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
@@ -162,21 +159,17 @@ it("should handle error from Gitlab for bad token", async function() {
 // retrieved commit list empty (shouldn't be possible?)
 // should this be an error case?
 it("should cope with receiving an empty commit list", async function() {
-  // re-mock getCommits to give the response we're after
-  console.log("empty commit list");
+  let emptyCommitListMocks = {};
 
-  gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
-    console.log("getCommits mock returning empty list");
+  emptyCommitListMocks.getCommits = function(projectId, mergeRequestId) {
     return [];
   };
 
-  gitlabApiMocks.getUserInfo = function(emailAddress) {
-    console.log("special getUserInfo mock");
+  emptyCommitListMocks.getUserInfo = function(emailAddress) {
     return [];
   };
 
-  gitlabApiMocks.gitlabRequest = function(opts, token, method) {
-    console.log("standard gitlabRequest mock");
+  emptyCommitListMocks.gitlabRequest = function(opts, token, method) {
     if(token !== goodGitlabToken)
     {
       return Promise.reject(new Error(
@@ -196,18 +189,22 @@ it("should cope with receiving an empty commit list", async function() {
     distinctUsersToVerify: []
   };
 
-  mock("../src/gitlabApi.js", gitlabApiMocks);
-  const committerFinder = require("../src/committerFinder");
+  mock("../src/gitlabApi", emptyCommitListMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder.js");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
-    goodGitlabToken);
+    goodGitlabToken
+  );
 
-    expect(response).toEqual(expectedResponse);
-    console.log(response);
+  // is this not awaiting hard enough?
+  
+  expect(response).toEqual(expectedResponse);
 });
 
 // commit list 1, ok
+
+
 // commit list 3 distinct, ok
 // commit list 3, 2 distinct + one exact copy, ok
 // commit list 3 same name different e-mail, ok
