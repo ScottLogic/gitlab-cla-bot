@@ -42,6 +42,45 @@ const commitsInMR = [
   }
 ];
 
+const sampleResponse = {
+  unresolvedLoginNames: [],
+  distinctUsersToVerify: []
+};
+
+let gitlabApiMocks = {};
+
+gitlabApiMocks.gitlabRequest = function(opts, token, method) {
+  console.log("standard gitlabRequest mock");
+  if(token !== goodGitlabToken)
+  {
+    return Promise.reject(new Error(
+      `API request ${web_url} failed with status ${'401'}`
+      ));
+  }
+
+  if(opts instanceof Error) {
+    return Promise.reject(opts);
+  } else {
+    return Promise.resolve(opts);
+  }
+};
+
+gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
+  console.log("standard getCommits mock");
+  if( projectId !== goodProjectId || mergeRequestId !==goodMergeRequestId ) {
+    return new Error(
+      `API request ${web_url} failed with status ${'404'}`
+     );
+  }
+
+  return commitsInMR;
+};
+
+// TODO: use good info to return user with login property
+gitlabApiMocks.getUserInfo = function(emailAddress) {
+  console.log("standard getUserInfo mock");
+  return [];
+};
 
 beforeAll(() => {
     // make sure nothing else is mocking this/cancel the last one
@@ -54,53 +93,11 @@ beforeAll(() => {
     info: function(message) {}
   });
 
-  mock("../src/gitlabApi", {
-    gitlabRequest: function(opts, token, method) {
-      if(token !== goodGitlabToken)
-      {
-        return Promise.reject(new Error(
-          `API request ${web_url} failed with status ${'401'}`
-          ));
-      }
-
-      if(opts instanceof Error) {
-        return Promise.reject(opts);
-      } else {
-        return Promise.resolve(opts);
-      }
-    },
-    getCommits: function(projectId, mergeRequestId) {
-      if( projectId !== goodProjectId || mergeRequestId !==goodMergeRequestId ) {
-        return new Error(
-          `API request ${web_url} failed with status ${'404'}`
-         );
-      }
-      return commitsInMR;
-    }
-  });
-
 });
 
-// beforeEach
+beforeEach
 beforeEach(() => {
-
-    // return something settable?
-    // mock("../src/gitlabApi", {
-    //   gitlabRequest: function() {
-    //     // usually returns a promise :/
-    //     // create one and then resolve it?
-    //     // inspect input and return appropriate output?
-    //     // or mock-per-test
-    //     console.log("Hello I'm a mock for gitlabRequest");
-    //     return Promise.reject(new Error(
-    //       `API request ${web_url} failed with status ${'404'}`
-    //      ));
-    //   },
-    //   getCommits: function() {
-    //     console.log("I'm a mock for getCommits");
-    //   }
-    // });
-
+  mock.stop("../src/gitlabApi");
 });
 
 afterAll(() => {
@@ -108,14 +105,12 @@ afterAll(() => {
   mock.stop("../src/logger");
 });
 
-// tests
+/*********************** TEST CASES ***********************/
 
 // changing parameters is pretty pointless given that everything that depends on them is mocked out
 
-// First three aren't checking much?
-
 it("should handle error from Gitlab for bad project ID", async function() {
-
+  mock("../src/gitlabApi.js", gitlabApiMocks);
   const committerFinder = require("../src/committerFinder");
   // takes projectId, mergeRequestId, gitlabToken
   let response = await committerFinder(
@@ -131,9 +126,8 @@ it("should handle error from Gitlab for bad project ID", async function() {
   expect(response).toBeUndefined();
 });
 
-// basically the same as the previous request - remove?
 it("should handle error from Gitlab for bad merge request ID", async function() {
-
+  mock("../src/gitlabApi.js", gitlabApiMocks);
   const committerFinder = require("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
@@ -148,9 +142,8 @@ it("should handle error from Gitlab for bad merge request ID", async function() 
   expect(response).toBeUndefined();
 });
 
-// bad gitlabToken should lead to code 401
 it("should handle error from Gitlab for bad token", async function() {
-
+  mock("../src/gitlabApi.js", gitlabApiMocks);
   const committerFinder = require("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
@@ -165,7 +158,55 @@ it("should handle error from Gitlab for bad token", async function() {
   expect(response).toBeUndefined();
 });
 
+
 // retrieved commit list empty (shouldn't be possible?)
+// should this be an error case?
+it("should cope with receiving an empty commit list", async function() {
+  // re-mock getCommits to give the response we're after
+  console.log("empty commit list");
+
+  gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
+    console.log("getCommits mock returning empty list");
+    return [];
+  };
+
+  gitlabApiMocks.getUserInfo = function(emailAddress) {
+    console.log("special getUserInfo mock");
+    return [];
+  };
+
+  gitlabApiMocks.gitlabRequest = function(opts, token, method) {
+    console.log("standard gitlabRequest mock");
+    if(token !== goodGitlabToken)
+    {
+      return Promise.reject(new Error(
+        `API request ${web_url} failed with status ${'401'}`
+        ));
+    }
+  
+    if(opts instanceof Error) {
+      return Promise.reject(opts);
+    } else {
+      return Promise.resolve(opts);
+    }
+  };
+
+  let expectedResponse = {
+    unresolvedLoginNames: [],
+    distinctUsersToVerify: []
+  };
+
+  mock("../src/gitlabApi.js", gitlabApiMocks);
+  const committerFinder = require("../src/committerFinder");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken);
+
+    expect(response).toEqual(expectedResponse);
+    console.log(response);
+});
+
 // commit list 1, ok
 // commit list 3 distinct, ok
 // commit list 3, 2 distinct + one exact copy, ok
