@@ -42,6 +42,24 @@ const commitsInMR = [
   }
 ];
 
+const committersWithLogins = [
+  {
+    email: "bbobbity@badgertime.com",
+    name: "Bob Bobbity",
+    login: "bbobbity"
+  },
+  {
+    email: "clarinda@badgertime.com",
+    name: "Clarinda Mvula",
+    login: "clarinda"
+  },
+  {
+    email: "stevey.steve@gmail.com",
+    name: "Stevey",
+    login: "steveySteve"
+  }
+];
+
 const sampleResponse = {
   unresolvedLoginNames: [],
   distinctUsersToVerify: []
@@ -74,9 +92,8 @@ gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
   return commitsInMR;
 };
 
-// TODO: use good info to return user with login property
 gitlabApiMocks.getUserInfo = function(emailAddress) {
-  return [];
+  return committersWithLogins;
 };
 
 beforeAll(() => {
@@ -157,32 +174,13 @@ it("should handle error from Gitlab for bad token", async function() {
 
 
 // retrieved commit list empty (shouldn't be possible?)
-// should this be an error case?
 it("should cope with receiving an empty commit list", async function() {
   let emptyCommitListMocks = {};
-
+  emptyCommitListMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
   emptyCommitListMocks.getCommits = function(projectId, mergeRequestId) {
     return [];
   };
-
-  emptyCommitListMocks.getUserInfo = function(emailAddress) {
-    return [];
-  };
-
-  emptyCommitListMocks.gitlabRequest = function(opts, token, method) {
-    if(token !== goodGitlabToken)
-    {
-      return Promise.reject(new Error(
-        `API request ${web_url} failed with status ${'401'}`
-        ));
-    }
-  
-    if(opts instanceof Error) {
-      return Promise.reject(opts);
-    } else {
-      return Promise.resolve(opts);
-    }
-  };
+  emptyCommitListMocks.getUserInfo = gitlabApiMocks.getUserInfo;
 
   let expectedResponse = {
     unresolvedLoginNames: [],
@@ -197,13 +195,38 @@ it("should cope with receiving an empty commit list", async function() {
     goodGitlabToken
   );
 
-  // is this not awaiting hard enough?
-  
   expect(response).toEqual(expectedResponse);
 });
 
 // commit list 1, ok
+it("retrieves and processes one committer", async function() {
+  let oneCommitterMocks = {};
 
+  oneCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
+  oneCommitterMocks.getCommits = function(projectId, mergeRequestId) {
+    return [commitsInMR[0]];
+  };
+  oneCommitterMocks.getUserInfo = function() {
+    return committersWithLogins[0];
+  };
+
+  let expectedResponse = {
+    unresolvedLoginNames: [committersWithLogins[0].name],
+    distinctUsersToVerify: []
+  };
+
+  mock("../src/gitlabApi", oneCommitterMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken
+  );
+  
+  expect(response).toEqual(expectedResponse);
+
+  // TODO: what after getUserInfo? This is a prefix for several cases
+});
 
 // commit list 3 distinct, ok
 // commit list 3, 2 distinct + one exact copy, ok
