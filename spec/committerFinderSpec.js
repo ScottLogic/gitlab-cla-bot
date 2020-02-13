@@ -341,12 +341,26 @@ it("can process a commit with no e-mail", async function() {
   expect(response).toEqual(expectedResponse);
 });
 
-// commit list 3 distinct, ok
+it("can retrieve user info for three distinct committers from three commits", async function() {
+  mock("../src/gitlabApi", gitlabApiMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken);
+  
+  let expectedResponse = {
+    unresolvedLoginNames: [],
+    distinctUsersToVerify: committersWithLogins
+  };
+  expect(response).toEqual(expectedResponse);
+});
+
+// trickier cases
 // commit list 3, 2 distinct + one exact copy, ok
 // commit list 3 same name different e-mail, ok
 // commit list 3 different name same e-mail, ok
 // commit list 3, no e-mails present in commit?
-// commit list 1, no usernames retrieved
 // commit list 3, no usernames retrieved
 // commit list 3, some no e-mail & some no username
 // commit list 3, 2 distinct & first copy has no e-mail
