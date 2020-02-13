@@ -12,52 +12,65 @@ const goodGitlabToken = "mad3u9t0k3n";
 const web_url = "https://gitlab.com/api/v4/projects/";
 
 // cribbed from gitlab API documentation
-const commitsInMR = [
-  {
-    "id": "abb37a253b50b4370f6ee794676502b48383c7cb",
-    "short_id": "abb37a253b5",
-    "title": "Replace elephants with pigeons",
-    "author_name": "Bob Bobbity",
-    "author_email": "bbobbity@badgertime.com",
-    "created_at": "2015-11-03T07:23:12+08:00",
-    "message": "Replace elephants with pigeons"
-  },
-  {
-    "id": "c4b3745653b50b770f6ee734676aaaaaaaaaaaaa",
-    "short_id": "c4b3745653b",
-    "title": "Sharpen focus on tusks",
-    "author_name": "Clarinda Mvula",
-    "author_email": "clarinda@badgertime.com",
-    "created_at": "2013-11-03T07:23:12+08:00",
-    "message": "Sharpen focus on tusks"
-  },
-  {
-    "id": "2205942438c14ec7be21c6ce5bd945243b3fab31",
-    "short_id": "2205942438c",
-    "title": "Reduce variance of flange nodes",
-    "author_name": "Stevey",
-    "author_email": "stevey.steve@gmail.com",
-    "created_at": "2012-09-20T09:06:12+03:00",
-    "message": "Reduce variance of flange nodes"
-  }
-];
+const bobCommit = {
+  "id": "abb37a253b50b4370f6ee794676502b48383c7cb",
+  "short_id": "abb37a253b5",
+  "title": "Replace elephants with pigeons",
+  "author_name": "Bob Bobbity",
+  "author_email": "bbobbity@badgertime.com",
+  "created_at": "2015-11-03T07:23:12+08:00",
+  "message": "Replace elephants with pigeons"
+};
+
+const clarindaCommit = {
+  "id": "c4b3745653b50b770f6ee734676aaaaaaaaaaaaa",
+  "short_id": "c4b3745653b",
+  "title": "Sharpen focus on tusks",
+  "author_name": "Clarinda Mvula",
+  "author_email": "clarinda@badgertime.com",
+  "created_at": "2013-11-03T07:23:12+08:00",
+  "message": "Sharpen focus on tusks"
+};
+
+const steveCommit = {
+  "id": "2205942438c14ec7be21c6ce5bd945243b3fab31",
+  "short_id": "2205942438c",
+  "title": "Reduce variance of flange nodes",
+  "author_name": "Stevey",
+  "author_email": "stevey.steve@gmail.com",
+  "created_at": "2012-09-20T09:06:12+03:00",
+  "message": "Reduce variance of flange nodes"
+};
+
+const commitsInMR = [bobCommit, clarindaCommit, steveCommit];
+
+// getUserInfo returns this wrapped in an array
+const bobLogin = {username: "bbobbity"};
+const clarindaLogin = {username: "clarinda"};
+const steveLogin = {username: "steveySteve"};
+
+const bobCommitter = {
+  email: bobCommit.author_email,
+  name: bobCommit.author_name,
+  login: bobLogin.username
+};
+
+const clarindaCommitter = {
+  email: clarindaCommit.author_email,
+  name: clarindaCommit.author_name,
+  login: clarindaLogin.username
+};
+
+const steveCommitter = {
+    email: steveCommit.author_email,
+    name: steveCommit.author_name,
+    login: steveLogin.username
+  };
 
 const committersWithLogins = [
-  {
-    email: "bbobbity@badgertime.com",
-    name: "Bob Bobbity",
-    login: "bbobbity"
-  },
-  {
-    email: "clarinda@badgertime.com",
-    name: "Clarinda Mvula",
-    login: "clarinda"
-  },
-  {
-    email: "stevey.steve@gmail.com",
-    name: "Stevey",
-    login: "steveySteve"
-  }
+  bobCommitter,
+  clarindaCommitter,
+  steveCommitter
 ];
 
 const sampleResponse = {
@@ -93,7 +106,18 @@ gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
 };
 
 gitlabApiMocks.getUserInfo = function(emailAddress) {
-  return committersWithLogins;
+  // switch on e-mail address and return appropriate login
+  switch(emailAddress) {
+    case bobCommit.author_email:
+      return [bobLogin];
+    case clarindaCommit.author_email:
+      return [clarindaLogin];
+    case steveCommit.author_email:
+      return [steveLogin];
+  }
+
+  // TODO: what's the correct error option?
+  return [];
 };
 
 beforeAll(() => {
@@ -198,20 +222,46 @@ it("should cope with receiving an empty commit list", async function() {
   expect(response).toEqual(expectedResponse);
 });
 
-// commit list 1, ok
-it("retrieves and processes one committer", async function() {
+// commit list 1, e-mail retrieved ok
+it("retrieves and processes one committer with username", async function() {
   let oneCommitterMocks = {};
 
   oneCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
   oneCommitterMocks.getCommits = function(projectId, mergeRequestId) {
-    return [commitsInMR[0]];
+    return [bobCommit];
+  };
+  oneCommitterMocks.getUserInfo = gitlabApiMocks.getUserInfo;
+
+  let expectedResponse = {
+    unresolvedLoginNames: [],
+    distinctUsersToVerify: [bobCommitter]
+  };
+
+  mock("../src/gitlabApi", oneCommitterMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken
+  );
+  
+  expect(response).toEqual(expectedResponse);
+});
+
+// commit list 1, e-mail not retrieved ok
+it("retrieves and processes one committer with no username", async function() {
+  let oneCommitterMocks = {};
+
+  oneCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
+  oneCommitterMocks.getCommits = function(projectId, mergeRequestId) {
+    return [bobCommit];
   };
   oneCommitterMocks.getUserInfo = function() {
-    return committersWithLogins[0];
+    return [];
   };
 
   let expectedResponse = {
-    unresolvedLoginNames: [committersWithLogins[0].name],
+    unresolvedLoginNames: [bobCommitter.name],
     distinctUsersToVerify: []
   };
 
@@ -224,9 +274,9 @@ it("retrieves and processes one committer", async function() {
   );
   
   expect(response).toEqual(expectedResponse);
-
-  // TODO: what after getUserInfo? This is a prefix for several cases
 });
+
+// TODO: cases where getUserInfo throws or fails?
 
 // commit list 3 distinct, ok
 // commit list 3, 2 distinct + one exact copy, ok
