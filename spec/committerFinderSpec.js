@@ -78,6 +78,7 @@ const sampleResponse = {
   distinctUsersToVerify: []
 };
 
+// general purpose mocks
 let gitlabApiMocks = {};
 
 gitlabApiMocks.gitlabRequest = function(opts, token, method) {
@@ -106,7 +107,6 @@ gitlabApiMocks.getCommits = function(projectId, mergeRequestId) {
 };
 
 gitlabApiMocks.getUserInfo = function(emailAddress) {
-  // switch on e-mail address and return appropriate login
   switch(emailAddress) {
     case bobCommit.author_email:
       return [bobLogin];
@@ -115,8 +115,6 @@ gitlabApiMocks.getUserInfo = function(emailAddress) {
     case steveCommit.author_email:
       return [steveLogin];
   }
-
-  // TODO: what's the correct error option?
   return [];
 };
 
@@ -133,7 +131,6 @@ beforeAll(() => {
 
 });
 
-// beforeEach
 beforeEach(() => {
   mock.stop("../src/gitlabApi");
 });
@@ -196,8 +193,7 @@ it("should handle error from Gitlab for bad token", async function() {
   expect(response).toBeUndefined();
 });
 
-
-// retrieved commit list empty (shouldn't be possible?)
+// Is this possible?
 it("should cope with receiving an empty commit list", async function() {
   let emptyCommitListMocks = {};
   emptyCommitListMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
@@ -222,8 +218,7 @@ it("should cope with receiving an empty commit list", async function() {
   expect(response).toEqual(expectedResponse);
 });
 
-// commit list 1, e-mail retrieved ok
-it("retrieves and processes one committer with username", async function() {
+it("retrieves and processes one committer with username findable", async function() {
   let oneCommitterMocks = {};
 
   oneCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
@@ -248,15 +243,16 @@ it("retrieves and processes one committer with username", async function() {
   expect(response).toEqual(expectedResponse);
 });
 
-// commit list 1, e-mail not retrieved ok
-it("retrieves and processes one committer with no username", async function() {
-  let oneCommitterMocks = {};
+// getUserInfo does a user search on e-mail
+// so an unknown user is a success case with empty data
+it("retrieves and processes one committer with no username findable", async function() {
+  let oneCommitterNoEmailMocks = {};
 
-  oneCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
-  oneCommitterMocks.getCommits = function(projectId, mergeRequestId) {
+  oneCommitterNoEmailMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
+  oneCommitterNoEmailMocks.getCommits = function(projectId, mergeRequestId) {
     return [bobCommit];
   };
-  oneCommitterMocks.getUserInfo = function() {
+  oneCommitterNoEmailMocks.getUserInfo = function() {
     return [];
   };
 
@@ -265,7 +261,7 @@ it("retrieves and processes one committer with no username", async function() {
     distinctUsersToVerify: []
   };
 
-  mock("../src/gitlabApi", oneCommitterMocks);
+  mock("../src/gitlabApi", oneCommitterNoEmailMocks);
   const committerFinder = mock.reRequire("../src/committerFinder.js");
   let response = await committerFinder(
     goodProjectId, 
@@ -276,17 +272,82 @@ it("retrieves and processes one committer with no username", async function() {
   expect(response).toEqual(expectedResponse);
 });
 
-// TODO: cases where getUserInfo throws or fails?
+it("can process a commit with null e-mail", async function() {
+  const nullEmailCommit = {
+    "id": "abb37a253b50b4370f6ee794676502b48383c7cb",
+    "short_id": "abb37a253b5",
+    "title": "Replace elephants with pigeons",
+    "author_name": "Bob Bobbity",
+    "author_email": null,
+    "created_at": "2015-11-03T07:23:12+08:00",
+    "message": "Replace elephants with pigeons"
+  };
+
+  let nullEmailMocks = {};
+  nullEmailMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
+  nullEmailMocks.getCommits = function(projectId, mergeRequestId) {
+    return [nullEmailCommit];
+  };
+  // shouldn't reach this one
+  nullEmailMocks.getUserInfo = gitlabApiMocks.getUserInfo;
+
+  let expectedResponse = {
+    unresolvedLoginNames: [bobCommitter.name],
+    distinctUsersToVerify: []
+  };
+
+  mock("../src/gitlabApi", nullEmailMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken
+  );
+  
+  expect(response).toEqual(expectedResponse);
+});
+
+it("can process a commit with no e-mail", async function() {
+  const noEmailCommit = {
+    "id": "abb37a253b50b4370f6ee794676502b48383c7cb",
+    "short_id": "abb37a253b5",
+    "title": "Replace elephants with pigeons",
+    "author_name": "Bob Bobbity",
+    "created_at": "2015-11-03T07:23:12+08:00",
+    "message": "Replace elephants with pigeons"
+  };
+
+  let noEmailMocks = {};
+  noEmailMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
+  noEmailMocks.getCommits = function(projectId, mergeRequestId) {
+    return [noEmailCommit];
+  };
+  // shouldn't reach this one
+  noEmailMocks.getUserInfo = gitlabApiMocks.getUserInfo;
+
+  let expectedResponse = {
+    unresolvedLoginNames: [bobCommitter.name],
+    distinctUsersToVerify: []
+  };
+
+  mock("../src/gitlabApi", noEmailMocks);
+  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  let response = await committerFinder(
+    goodProjectId, 
+    goodMergeRequestId, 
+    goodGitlabToken
+  );
+  
+  expect(response).toEqual(expectedResponse);
+});
 
 // commit list 3 distinct, ok
 // commit list 3, 2 distinct + one exact copy, ok
 // commit list 3 same name different e-mail, ok
 // commit list 3 different name same e-mail, ok
-
-// commit list 1, no e-mails
-// commit list 3, no e-mails
-// commit list 1, no usernames
-// commit list 3, no usernames
+// commit list 3, no e-mails present in commit?
+// commit list 1, no usernames retrieved
+// commit list 3, no usernames retrieved
 // commit list 3, some no e-mail & some no username
 // commit list 3, 2 distinct & first copy has no e-mail
 // commit list 3, 2 distinct & second copy has no e-mail
@@ -294,7 +355,6 @@ it("retrieves and processes one committer with no username", async function() {
 // username retrieval doesn't go so well
 // no usernames matched
 // one of three usernames matched
-
 
 
 });
