@@ -81,7 +81,7 @@ exports.Handler = constructHandler(async webhook => {
 
   if (webhook.object_kind === "note") {
     if (!commentSummonsBot(webhook.object_attributes.note)) {
-      return "the comment didn't summon the cla-bot";
+      return `the following comment didn't summon the cla-bot because the string pattern to summon was not met: ${webhook.object_attributes.note}`;
     }
     // TODO : Check if the CLA bot has summoned itself
 
