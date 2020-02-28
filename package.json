@@ -19,7 +19,7 @@
     "prettier": "1.19.1"
   },
   "scripts": {
-    "test": "npm run lint && jasmine",
+    "test": "npm run lint && jasmine --random=false",
     "lint": "eslint \"src/*.js\"",
     "prettier:fix": "prettier --write \"{src,spec}/**/*.js\""
   },
