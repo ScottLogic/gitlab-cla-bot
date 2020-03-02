@@ -505,30 +505,4 @@ describe("committer finder", () => {
 
     expect(response).toEqual(expectedResponse);
   });
-
-  // TODO: do we need to get info on both users at once?
-  // committerFinder exits after finding a missing e-mail  - is missing e-mail likely, or even possible?
-  // it("will inform us about multiple unresolved users if they are unresolvable in different ways", async function() {
-  //   let unresolvableMocks = {};
-  //   unresolvableMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
-  //   unresolvableMocks.getCommits = function(projectId, mergeRequestId) {
-  //     return [noEmailBobCommit, unmappedEmailCommit];
-  //   };
-  //   unresolvableMocks.getUserInfo = gitlabApiMocks.getUserInfo;
-
-  //   mock("../src/gitlabApi", unresolvableMocks);
-  //   const committerFinder = mock.reRequire("../src/committerFinder");
-  //   let response = await committerFinder(
-  //     goodProjectId,
-  //     goodMergeRequestId,
-  //     goodGitlabToken
-  //   );
-
-  //   let expectedResponse = {
-  //     unresolvedLoginNames: [noEmailBobCommit.author_name, unmappedEmailCommit.author_name],
-  //     distinctUsersToVerify: []
-  //   };
-
-  //   expect(response).toEqual(expectedResponse);
-  // });
 });
