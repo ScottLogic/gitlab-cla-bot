@@ -185,6 +185,7 @@ gitlabApiMocks.getUserInfo = function(emailAddress) {
 beforeAll(() => {
     // make sure nothing else is mocking this/cancel the last one
   mock.stop("../src/gitlabApi");
+  mock.stop("../src/committerFinder");
     
   mock("../src/logger", {
     debug: function(message) {},
@@ -202,6 +203,7 @@ beforeEach(() => {
 afterAll(() => {
   mock.stop("../src/gitlabApi");
   mock.stop("../src/logger");
+  mock.stop("../src/committerFinder");
 });
 
 /*********************** TEST CASES ***********************/
@@ -273,7 +275,7 @@ it("copes with receiving an empty commit list", async function() {
   };
 
   mock("../src/gitlabApi", emptyCommitListMocks);
-  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
@@ -298,7 +300,7 @@ it("retrieves and processes one committer with username findable", async functio
   };
 
   mock("../src/gitlabApi", oneCommitterMocks);
-  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
@@ -327,7 +329,7 @@ it("retrieves and processes one committer with no username findable", async func
   };
 
   mock("../src/gitlabApi", oneCommitterNoEmailMocks);
-  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
@@ -362,7 +364,7 @@ it("can process a commit with null e-mail", async function() {
   };
 
   mock("../src/gitlabApi", nullEmailMocks);
-  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
@@ -387,7 +389,7 @@ it("can process a commit with no e-mail", async function() {
   };
 
   mock("../src/gitlabApi", noEmailMocks);
-  const committerFinder = mock.reRequire("../src/committerFinder.js");
+  const committerFinder = mock.reRequire("../src/committerFinder");
   let response = await committerFinder(
     goodProjectId, 
     goodMergeRequestId, 
