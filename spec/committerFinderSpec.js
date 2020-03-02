@@ -90,6 +90,17 @@ describe("committer finder", () => {
     message: "Tear it apart"
   };
 
+  const sortResponse = function(unsortedResponse) {
+    return {
+      unresolvedLoginNames: unsortedResponse.unresolvedLoginNames.sort(),
+      distinctUsersToVerify: unsortedResponse.distinctUsersToVerify
+        .map(function(name) {
+          return name.email;
+        })
+        .sort()
+    };
+  };
+
   const distinctCommitterCommits = [bobCommit, clarindaCommit, steveCommit];
 
   // getUserInfo returns an object like this wrapped in an array
@@ -283,7 +294,7 @@ describe("committer finder", () => {
       goodGitlabToken
     );
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("retrieves and processes one committer with username findable", async function() {
@@ -308,7 +319,7 @@ describe("committer finder", () => {
       goodGitlabToken
     );
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   // getUserInfo does a user search on e-mail
@@ -337,7 +348,7 @@ describe("committer finder", () => {
       goodGitlabToken
     );
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("can process a commit with null e-mail", async function() {
@@ -372,7 +383,7 @@ describe("committer finder", () => {
       goodGitlabToken
     );
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("can process a commit with no e-mail", async function() {
@@ -397,7 +408,7 @@ describe("committer finder", () => {
       goodGitlabToken
     );
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("can retrieve user info for three distinct committers from three commits", async function() {
@@ -413,7 +424,7 @@ describe("committer finder", () => {
       unresolvedLoginNames: [],
       distinctUsersToVerify: committersWithLogins
     };
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("can deduplicate committers by e-mail", async function() {
@@ -444,10 +455,10 @@ describe("committer finder", () => {
 
     let expectedResponse = {
       unresolvedLoginNames: [],
-      distinctUsersToVerify: [bobCommitter, clarindaCommitter]
+      distinctUsersToVerify: [clarindaCommitter, bobCommitter]
     };
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("treats committers with the same name but different e-mails separately", async function() {
@@ -475,7 +486,7 @@ describe("committer finder", () => {
       ]
     };
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 
   it("can identify the same person with two aliases by e-mail", async function() {
@@ -503,6 +514,6 @@ describe("committer finder", () => {
       distinctUsersToVerify: [clarindaCommitter]
     };
 
-    expect(response).toEqual(expectedResponse);
+    expect(sortResponse(response)).toEqual(sortResponse(expectedResponse));
   });
 });
