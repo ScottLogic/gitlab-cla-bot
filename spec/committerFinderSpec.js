@@ -253,7 +253,9 @@ describe("committer finder", () => {
     ).catch(function(error) {
       expect(error).toBeDefined();
       expect(error.message).toBeDefined();
-      expect(error.message).toEqual(`API request ${web_url} failed with status ${401}`);
+      expect(error.message).toEqual(
+        `API request ${web_url} failed with status 401`
+      );
     });
 
     expect(response).toBeUndefined();
@@ -449,7 +451,6 @@ describe("committer finder", () => {
   });
 
   it("treats committers with the same name but different e-mails separately", async function() {
-
     let duplicateCommitterMocks = {};
     duplicateCommitterMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
     duplicateCommitterMocks.getCommits = function(projectId, mergeRequestId) {
@@ -479,8 +480,12 @@ describe("committer finder", () => {
 
   it("can identify the same person with two aliases by e-mail", async function() {
     let duplicateCommitterSameEmailMocks = {};
-    duplicateCommitterSameEmailMocks.gitlabRequest = gitlabApiMocks.gitlabRequest;
-    duplicateCommitterSameEmailMocks.getCommits = function(projectId, mergeRequestId) {
+    duplicateCommitterSameEmailMocks.gitlabRequest =
+      gitlabApiMocks.gitlabRequest;
+    duplicateCommitterSameEmailMocks.getCommits = function(
+      projectId,
+      mergeRequestId
+    ) {
       return [clarindaCommit, clarindaAliasCommit];
     };
     duplicateCommitterSameEmailMocks.getUserInfo = gitlabApiMocks.getUserInfo;
@@ -514,9 +519,10 @@ describe("committer finder", () => {
   //   mock("../src/gitlabApi", unresolvableMocks);
   //   const committerFinder = mock.reRequire("../src/committerFinder");
   //   let response = await committerFinder(
-  //     goodProjectId, 
-  //     goodMergeRequestId, 
-  //     goodGitlabToken);
+  //     goodProjectId,
+  //     goodMergeRequestId,
+  //     goodGitlabToken
+  //   );
 
   //   let expectedResponse = {
   //     unresolvedLoginNames: [noEmailBobCommit.author_name, unmappedEmailCommit.author_name],
