@@ -11,6 +11,7 @@ provider:
   environment:
     LOGGING_BUCKET: ${self:custom.loggingBucketName}
     GITLAB_ACCESS_TOKEN: YOUR_TOKEN_HERE
+    GITLAB_INSTANCE_DOMAIN: gitlab.com
   iamRoleStatements:
     - Effect: Allow
       Action:
