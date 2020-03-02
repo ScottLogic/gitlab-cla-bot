@@ -90,16 +90,24 @@ describe("committer finder", () => {
     message: "Tear it apart"
   };
 
-  const sortResponse = function(unsortedResponse) {
+  function compareUsers(a, b) {
+    let comparison = 0;
+    if (a.email > b.email) {
+      comparison = 1;
+    } else if (a.email < b.email) {
+      comparison = -1;
+    }
+    return comparison;
+  }
+
+  function sortResponse(unsortedResponse) {
     return {
       unresolvedLoginNames: unsortedResponse.unresolvedLoginNames.sort(),
-      distinctUsersToVerify: unsortedResponse.distinctUsersToVerify
-        .map(function(name) {
-          return name.email;
-        })
-        .sort()
+      distinctUsersToVerify: unsortedResponse.distinctUsersToVerify.sort(
+        compareUsers
+      )
     };
-  };
+  }
 
   const distinctCommitterCommits = [bobCommit, clarindaCommit, steveCommit];
 
