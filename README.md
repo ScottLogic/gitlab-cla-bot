@@ -28,7 +28,7 @@ To hook into Gitlab:
 - Go to Settings->Integrations in Gitlab
 - Add a new webhook triggered by `Comments` and `Merge request events`. Hook URL should be the endpoint you've noted down. Untick security options
 - Click Test->`Note events` or `Merge requests events`
-- Result should appear at the top of the page: ![Gitlab success message](./gitlab-success-message.png)
+- Result should appear at the top of the page: ![Gitlab success message](./gitlab-success-message.PNG)
 - Add a `.clabot` file in the root of the project with a whitelist of the gitlab usernames that are cla-signed:
 ```
 {
