@@ -35,7 +35,7 @@ To hook into Gitlab:
   "contributors": ["<gitlab-username>"]
 }
 ```
-- Get one of the whitelisted contributors to make a comment including the text "@gitlab-cla-bot check" on a merge request or create a merge request.
+- Create a merge request or make a comment including the text "@gitlab-cla-bot check" on a merge request and the bot should respond.
 
 IAM user permissions required (see https://github.com/serverless/serverless/issues/1674):
 - "cloudformation:CreateStack",
