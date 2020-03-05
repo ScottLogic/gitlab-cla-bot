@@ -1,4 +1,4 @@
-service: gitlab-example
+service: gitlab-cla-bot
 
 custom:
   loggingBucketName: gitlab-cla-bot-logs
