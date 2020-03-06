@@ -36,11 +36,13 @@ const gitLabInfo = webhook =>
   webhook.object_kind === "note"
     ? {
         projectId: webhook.project.id,
+        namespace: webhook.project.path_with_namespace.split("/")[0],
         mergeRequestId: webhook.merge_request.iid,
         projectUrl: webhook.project.web_url
       }
     : {
         projectId: webhook.project.id,
+        namespace: webhook.project.path_with_namespace.split("/")[0],
         mergeRequestId: webhook.object_attributes.iid,
         projectUrl: webhook.project.web_url
       };
@@ -87,12 +89,14 @@ exports.Handler = constructHandler(async webhook => {
 
     logger.info("The cla-bot has been summoned by a comment");
   }
-
+  
   const token = obtainToken(webhook);
   const {
     addComment,
     getMergeRequest,
     getProjectClaFile,
+    searchNamespaceByName,
+    getOrgConfigProject,
     setCommitStatus,
     getProjectLabels,
     createProjectLabel,
@@ -101,6 +105,7 @@ exports.Handler = constructHandler(async webhook => {
 
   const {
     projectId: projectId,
+    namespace: namespace,
     mergeRequestId: mergeRequestId,
     projectUrl: projectUrl
   } = gitLabInfo(webhook);
@@ -115,8 +120,22 @@ exports.Handler = constructHandler(async webhook => {
   const MRInfo = await getMergeRequest(projectId, mergeRequestId);
   const headSha = MRInfo.sha;
 
-  // TODO : Investigate group level .clabot file.
-  let claConfig = await getProjectClaFile(projectId);
+  // Try to load project clabot-config, from 
+  // the same project namespace (aka GitLab Group)
+  let ns = await searchNamespaceByName(namespace);
+  let nsId = ns[0].id;
+  logger.info(`Namespace is ${namespace}, ID ${nsId}`);
+  let orgConfigProject = await getOrgConfigProject(nsId);
+  let claConfig = null;
+  if (orgConfigProject) {
+    logger.info(`Found clabot-config project, ID is ${orgConfigProject[0].id}`);
+    claConfig = await getProjectClaFile(orgConfigProject[0].id);
+  }
+
+  if (!is.json(claConfig)) {
+    claConfig = await getProjectClaFile(projectId);
+  }
+
   if (!is.json(claConfig)) {
     logger.error("The .clabot file is not valid JSON");
     await setCommitStatus(projectId, headSha, "failed", botName);
