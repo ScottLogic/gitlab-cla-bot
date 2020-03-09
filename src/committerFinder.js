@@ -7,13 +7,27 @@ const getUniqueCommitters = arr =>
       self.findIndex(c => c.email == value.email) === index
   );
 
+const getUserPayload = userData => {
+  let ghId = undefined;
+  if (userData.identities) {
+    ghIdentity = userData.identities.filter(identity => identity.provider == 'github');
+    if (ghIdentity) {
+      ghId = ghIdentity.extern_uid;
+    }
+  }
+  if (response.length > 0) {
+    return {
+      ...userData,
+      login: userData.username,
+      gitHubId: ghId
+    }
+  } else return undefined;
+}
+
 const hydrateGitlabUserInfo = async (usersToVerify, token) =>
   Promise.all(
     usersToVerify.map(user =>
-      gitlabRequest(getUserInfo(user.email), token).then(response => ({
-        ...user,
-        login: response.length > 0 ? response[0].username : undefined
-      }))
+      gitlabRequest(getUserInfo(user.email), token).then(response => getUserPayload(response))
     )
   );
 
