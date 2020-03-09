@@ -10,15 +10,15 @@ const getUniqueCommitters = arr =>
 const getUserPayload = userData => {
   let ghId = undefined;
   if (userData.length > 0) {
-    if (userData.identities) {
-      ghIdentity = userData.identities.filter(identity => identity.provider == 'github')[0];
-      if (ghIdentity) {
-        ghId = ghIdentity.extern_uid;
+    if (userData[0].identities) {
+      ghIdentity = userData[0].identities.filter(identity => identity.provider == 'github');
+      if (ghIdentity.length > 0) {
+        ghId = ghIdentity[0].extern_uid;
       }
     }
     return {
-      ...userData,
-      login: userData.username,
+      ...userData[0],
+      login: userData[0].username,
       gitHubId: ghId
     }
   } else return undefined;
