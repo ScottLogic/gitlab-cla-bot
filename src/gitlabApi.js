@@ -28,6 +28,18 @@ exports.getUserInfo = emailAddress => ({
   method: "GET"
 });
 
+exports.searchNamespaceByName = nsName => ({
+  // This assumes master branch, might need to rework this at some point
+  url: `https://${process.env.GITLAB_INSTANCE_DOMAIN}/api/v4/namespaces?search=${nsName}`,
+  method: "GET"
+});
+
+exports.getOrgConfigProject = nsId => ({
+  // This assumes master branch, might need to rework this at some point
+  url: `https://${process.env.GITLAB_INSTANCE_DOMAIN}/api/v4/groups/${nsId}/search?scope=projects&search=clabot-config`,
+  method: "GET"
+});
+
 exports.getProjectClaFile = projectId => ({
   // This assumes master branch, might need to rework this at some point
   url: `https://${process.env.GITLAB_INSTANCE_DOMAIN}/api/v4/projects/${projectId}/repository/files/%2Eclabot/raw?ref=master`,
