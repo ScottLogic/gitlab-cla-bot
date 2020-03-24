@@ -14,7 +14,7 @@ function partition(array, isValid) {
 
 const domainFromEmail = email => "@" + email.split("@")[1];
 
-const contributorArrayVerifier = contributors => committers => {
+const contributorArrayVerifier = (contributors, useGitHubIDs) => committers => {
   const lowerCaseContributors = contributors.map(c => c.toLowerCase());
   const [
     emailVerification,
@@ -36,8 +36,14 @@ const contributorArrayVerifier = contributors => committers => {
         return true;
       }
     }
-    if (usernameVerification.includes(c.login.toLowerCase())) {
-      return true;
+    if (useGitHubIDs) {
+      if (usernameVerification.includes(c.gitHubId)) {
+        return true;
+      }
+    } else {
+      if (usernameVerification.includes(c.login.toLowerCase())) {
+        return true;
+      }
     }
     return false;
   };
@@ -50,7 +56,7 @@ const configFileFromUrlVerifier = contributorListUrl => committers =>
   requestp({
     url: contributorListUrl,
     json: true
-  }).then(contributors => contributorArrayVerifier(contributors)(committers));
+  }).then(contributors => contributorArrayVerifier(contributors, false)(committers));
 
 const webhookVerifier = webhookUrl => committers =>
   Promise.all(
@@ -67,7 +73,7 @@ const webhookVerifier = webhookUrl => committers =>
     const contributors = responses
       .filter(r => r.isContributor)
       .map(r => r.username);
-    return contributorArrayVerifier(contributors)(committers);
+    return contributorArrayVerifier(contributors, false)(committers);
   });
 
 module.exports = config => {
@@ -78,7 +84,7 @@ module.exports = config => {
       logger.info(
         "Checking contributors against the list supplied in the .clabot file"
       );
-      return contributorArrayVerifier(configCopy.contributors);
+      return contributorArrayVerifier(configCopy.contributors, configCopy.useGitHubIDs);
     } else if (
       is.url(configCopy.contributors) &&
       configCopy.contributors.indexOf("?") !== -1

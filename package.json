@@ -24,7 +24,8 @@
     "lint": "eslint \"src/*.js\"",
     "prettier:fix": "prettier --write \"{src,spec}/**/*.js\"",
     "serverless": "serverless",
-    "serverless-setup-credentials": "serverless config credentials --provider aws"
+    "serverless-setup-credentials": "serverless config credentials --provider aws",
+    "deploy": "serverless deploy"
   },
   "author": "",
   "license": "Apache-2.0"
